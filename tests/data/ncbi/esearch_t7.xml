@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE eSearchResult PUBLIC "-//NLM//DTD esearch 20060628//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20060628/esearch.dtd">
+<eSearchResult><Count>124</Count><RetMax>20</RetMax><RetStart>0</RetStart><IdList>
+<Id>QB005184.1</Id>
+<Id>QB005183.1</Id>
+<Id>QB005182.1</Id>
+<Id>QB005181.1</Id>
+<Id>QB005180.1</Id>
+<Id>QB005179.1</Id>
+<Id>QB005178.1</Id>
+<Id>PX872939.1</Id>
+<Id>PX872938.1</Id>
+<Id>PZ151113.1</Id>
+<Id>PX223409.1</Id>
+<Id>PX223408.1</Id>
+<Id>PX866610.1</Id>
+<Id>PV714130.1</Id>
+<Id>PV287706.1</Id>
+<Id>PV223883.1</Id>
+<Id>PV223882.1</Id>
+<Id>PV223881.1</Id>
+<Id>PV223880.1</Id>
+<Id>OR979722.1</Id>
+</IdList><TranslationSet><Translation>     <From>Escherichia phage T7</From>     <To>"Escherichia phage T7"[Organism] OR Escherichia phage T7[All Fields]</To>    </Translation></TranslationSet><TranslationStack>   <TermSet>    <Term>"Escherichia phage T7"[Organism]</Term>    <Field>Organism</Field>    <Count>817</Count>    <Explode>Y</Explode>   </TermSet>   <TermSet>    <Term>Escherichia phage T7[All Fields]</Term>    <Field>All Fields</Field>    <Count>826</Count>    <Explode>N</Explode>   </TermSet>   <OP>OR</OP>   <OP>GROUP</OP>   <TermSet>    <Term>"complete genome"[Title]</Term>    <Field>Title</Field>    <Count>3782041</Count>    <Explode>N</Explode>   </TermSet>   <OP>AND</OP>   <TermSet>    <Term>00000001000[SLEN]</Term>    <Field>SLEN</Field>    <Count>0</Count>    <Explode>N</Explode>   </TermSet>   <TermSet>    <Term>00001000000[SLEN]</Term>    <Field>SLEN</Field>    <Count>0</Count>    <Explode>N</Explode>   </TermSet>   <OP>RANGE</OP>   <OP>AND</OP>  </TranslationStack><QueryTranslation>("Escherichia phage T7"[Organism] OR Escherichia phage T7[All Fields]) AND "complete genome"[Title] AND 00000001000[SLEN] : 00001000000[SLEN]</QueryTranslation></eSearchResult>

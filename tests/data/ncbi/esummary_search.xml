@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE eSummaryResult PUBLIC "-//NLM//DTD esummary v1 20041029//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20041029/esummary-v1.dtd">
+<eSummaryResult>
+<DocSum>
+	<Id>3408458959</Id>
+	<Item Name="Caption" Type="String">QB005184</Item>
+	<Item Name="Title" Type="String">Escherichia phage T7 isolate T7evo-3, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3408458959|gb|QB005184.1|[3408458959]</Item>
+	<Item Name="Gi" Type="Integer">3408458959</Item>
+	<Item Name="CreateDate" Type="String">2026/10/14</Item>
+	<Item Name="UpdateDate" Type="String">2026/10/14</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39777</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">QB005184.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3408458894</Id>
+	<Item Name="Caption" Type="String">QB005183</Item>
+	<Item Name="Title" Type="String">Escherichia phage T7 isolate T7evo-2, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3408458894|gb|QB005183.1|[3408458894]</Item>
+	<Item Name="Gi" Type="Integer">3408458894</Item>
+	<Item Name="CreateDate" Type="String">2026/10/14</Item>
+	<Item Name="UpdateDate" Type="String">2026/10/14</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39777</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">QB005183.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3408458829</Id>
+	<Item Name="Caption" Type="String">QB005182</Item>
+	<Item Name="Title" Type="String">Escherichia phage T7 isolate T7evo-1, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3408458829|gb|QB005182.1|[3408458829]</Item>
+	<Item Name="Gi" Type="Integer">3408458829</Item>
+	<Item Name="CreateDate" Type="String">2026/10/14</Item>
+	<Item Name="UpdateDate" Type="String">2026/10/14</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39777</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">QB005182.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3408458764</Id>
+	<Item Name="Caption" Type="String">QB005181</Item>
+	<Item Name="Title" Type="String">Escherichia phage T7 isolate T7-e-d2-3, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3408458764|gb|QB005181.1|[3408458764]</Item>
+	<Item Name="Gi" Type="Integer">3408458764</Item>
+	<Item Name="CreateDate" Type="String">2026/10/14</Item>
+	<Item Name="UpdateDate" Type="String">2026/10/14</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39881</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">QB005181.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3408458698</Id>
+	<Item Name="Caption" Type="String">QB005180</Item>
+	<Item Name="Title" Type="String">Escherichia phage T7 isolate T7-e-d2-2, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3408458698|gb|QB005180.1|[3408458698]</Item>
+	<Item Name="Gi" Type="Integer">3408458698</Item>
+	<Item Name="CreateDate" Type="String">2026/10/14</Item>
+	<Item Name="UpdateDate" Type="String">2026/10/14</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39881</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">QB005180.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3408458633</Id>
+	<Item Name="Caption" Type="String">QB005179</Item>
+	<Item Name="Title" Type="String">Escherichia phage T7 isolate T7-e-d2-1, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3408458633|gb|QB005179.1|[3408458633]</Item>
+	<Item Name="Gi" Type="Integer">3408458633</Item>
+	<Item Name="CreateDate" Type="String">2026/10/14</Item>
+	<Item Name="UpdateDate" Type="String">2026/10/14</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39881</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">QB005179.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3408458565</Id>
+	<Item Name="Caption" Type="String">QB005178</Item>
+	<Item Name="Title" Type="String">Escherichia phage T7 isolate T7-6, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3408458565|gb|QB005178.1|[3408458565]</Item>
+	<Item Name="Gi" Type="Integer">3408458565</Item>
+	<Item Name="CreateDate" Type="String">2026/10/14</Item>
+	<Item Name="UpdateDate" Type="String">2026/10/14</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39880</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">QB005178.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3403191933</Id>
+	<Item Name="Caption" Type="String">PX872939</Item>
+	<Item Name="Title" Type="String">Mutant Escherichia phage T7, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3403191933|gb|PX872939.1|[3403191933]</Item>
+	<Item Name="Gi" Type="Integer">3403191933</Item>
+	<Item Name="CreateDate" Type="String">2026/10/06</Item>
+	<Item Name="UpdateDate" Type="String">2026/10/06</Item>
+	<Item Name="Flags" Type="Integer">256</Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39048</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PX872939.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3403191832</Id>
+	<Item Name="Caption" Type="String">PX872938</Item>
+	<Item Name="Title" Type="String">Escherichia phage T7, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3403191832|gb|PX872938.1|[3403191832]</Item>
+	<Item Name="Gi" Type="Integer">3403191832</Item>
+	<Item Name="CreateDate" Type="String">2026/10/06</Item>
+	<Item Name="UpdateDate" Type="String">2026/10/06</Item>
+	<Item Name="Flags" Type="Integer">256</Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39905</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PX872938.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3352521467</Id>
+	<Item Name="Caption" Type="String">PZ151113</Item>
+	<Item Name="Title" Type="String">Mutant Escherichia phage T7 clone recombinant T7 DNAP- trxA+, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3352521467|gb|PZ151113.1|[3352521467]</Item>
+	<Item Name="Gi" Type="Integer">3352521467</Item>
+	<Item Name="CreateDate" Type="String">2026/07/04</Item>
+	<Item Name="UpdateDate" Type="String">2026/07/04</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">38194</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PZ151113.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3263121649</Id>
+	<Item Name="Caption" Type="String">PX223409</Item>
+	<Item Name="Title" Type="String">Caulobacter phage Senya, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3263121649|gb|PX223409.1|[3263121649]</Item>
+	<Item Name="Gi" Type="Integer">3263121649</Item>
+	<Item Name="CreateDate" Type="String">2026/04/11</Item>
+	<Item Name="UpdateDate" Type="String">2026/04/11</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">3458742</Item>
+	<Item Name="Length" Type="Integer">225427</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PX223409.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3263121300</Id>
+	<Item Name="Caption" Type="String">PX223408</Item>
+	<Item Name="Title" Type="String">Caulobacter phage Shash, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3263121300|gb|PX223408.1|[3263121300]</Item>
+	<Item Name="Gi" Type="Integer">3263121300</Item>
+	<Item Name="CreateDate" Type="String">2026/04/11</Item>
+	<Item Name="UpdateDate" Type="String">2026/04/11</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">3458741</Item>
+	<Item Name="Length" Type="Integer">223261</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PX223408.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3153849472</Id>
+	<Item Name="Caption" Type="String">PX866610</Item>
+	<Item Name="Title" Type="String">Proteus phage P15-podo, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3153849472|gb|PX866610.1|[3153849472]</Item>
+	<Item Name="Gi" Type="Integer">3153849472</Item>
+	<Item Name="CreateDate" Type="String">2026/02/03</Item>
+	<Item Name="UpdateDate" Type="String">2026/02/03</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">3591868</Item>
+	<Item Name="Length" Type="Integer">41568</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PX866610.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>3018768427</Id>
+	<Item Name="Caption" Type="String">PV714130</Item>
+	<Item Name="Title" Type="String">Escherichia phage Pipis, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|3018768427|gb|PV714130.1|[3018768427]</Item>
+	<Item Name="Gi" Type="Integer">3018768427</Item>
+	<Item Name="CreateDate" Type="String">2025/07/13</Item>
+	<Item Name="UpdateDate" Type="String">2025/07/13</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">3434944</Item>
+	<Item Name="Length" Type="Integer">40625</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PV714130.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>2958104994</Id>
+	<Item Name="Caption" Type="String">PV287706</Item>
+	<Item Name="Title" Type="String">Escherichia phage Midge, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|2958104994|gb|PV287706.1|[2958104994]</Item>
+	<Item Name="Gi" Type="Integer">2958104994</Item>
+	<Item Name="CreateDate" Type="String">2025/04/23</Item>
+	<Item Name="UpdateDate" Type="String">2025/07/08</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">3411023</Item>
+	<Item Name="Length" Type="Integer">29617</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PV287706.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>2978486079</Id>
+	<Item Name="Caption" Type="String">PV223883</Item>
+	<Item Name="Title" Type="String">Mutant Escherichia phage T7 clone recombinant T7-B-J, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|2978486079|gb|PV223883.1|[2978486079]</Item>
+	<Item Name="Gi" Type="Integer">2978486079</Item>
+	<Item Name="CreateDate" Type="String">2025/05/21</Item>
+	<Item Name="UpdateDate" Type="String">2025/05/21</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">36845</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PV223883.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>2978486033</Id>
+	<Item Name="Caption" Type="String">PV223882</Item>
+	<Item Name="Title" Type="String">Mutant Escherichia phage T7 clone recombinant T7-B-GJ, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|2978486033|gb|PV223882.1|[2978486033]</Item>
+	<Item Name="Gi" Type="Integer">2978486033</Item>
+	<Item Name="CreateDate" Type="String">2025/05/21</Item>
+	<Item Name="UpdateDate" Type="String">2025/05/21</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">38432</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PV223882.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>2978485988</Id>
+	<Item Name="Caption" Type="String">PV223881</Item>
+	<Item Name="Title" Type="String">Mutant Escherichia phage T7 clone recombinant T7-B-G, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|2978485988|gb|PV223881.1|[2978485988]</Item>
+	<Item Name="Gi" Type="Integer">2978485988</Item>
+	<Item Name="CreateDate" Type="String">2025/05/21</Item>
+	<Item Name="UpdateDate" Type="String">2025/05/21</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">37603</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PV223881.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>2978485944</Id>
+	<Item Name="Caption" Type="String">PV223880</Item>
+	<Item Name="Title" Type="String">Mutant Escherichia phage T7 clone recombinant T7-B, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|2978485944|gb|PV223880.1|[2978485944]</Item>
+	<Item Name="Gi" Type="Integer">2978485944</Item>
+	<Item Name="CreateDate" Type="String">2025/05/21</Item>
+	<Item Name="UpdateDate" Type="String">2025/05/21</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">36016</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">PV223880.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>2706108401</Id>
+	<Item Name="Caption" Type="String">OR979722</Item>
+	<Item Name="Title" Type="String">Escherichia phage ETEP21B, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|2706108401|gb|OR979722.1|[2706108401]</Item>
+	<Item Name="Gi" Type="Integer">2706108401</Item>
+	<Item Name="CreateDate" Type="String">2024/06/25</Item>
+	<Item Name="UpdateDate" Type="String">2024/06/25</Item>
+	<Item Name="Flags" Type="Integer"></Item>
+	<Item Name="TaxId" Type="Integer">3117681</Item>
+	<Item Name="Length" Type="Integer">39424</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">OR979722.1</Item>
+</DocSum>
+
+</eSummaryResult>
