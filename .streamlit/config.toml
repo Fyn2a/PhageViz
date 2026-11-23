@@ -1,5 +1,9 @@
 [server]
 maxUploadSize = 50
 
+[client]
+# Never show tracebacks in the browser; app.py catches errors and shows its own messages.
+showErrorDetails = "none"
+
 [theme]
 base = "light"

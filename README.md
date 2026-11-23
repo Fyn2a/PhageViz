@@ -1,4 +1,4 @@
-# PhageViz 🧬
+# PhageViz
 
 **Interactive bacteriophage genome annotation viewer, built with Streamlit.**
 

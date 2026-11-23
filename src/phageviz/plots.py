@@ -12,7 +12,8 @@ import plotly.graph_objects as go
 from phageviz.models import CATEGORIES, GenomeRecord
 
 # Paul Tol's "muted" palette (colour-blind safe). Grey marks unknown function so annotated genes
-# stand out; colours are fixed per category so maps are comparable across genomes.
+# stand out; colours are fixed per category so maps are comparable across genomes. Tol's pale
+# grey (#DDDDDD) was too faint on a white background, so unknown function uses #BBBBBB.
 CATEGORY_COLORS: dict[str, str] = {
     "head and packaging": "#332288",
     "connector": "#88CCEE",
@@ -23,10 +24,11 @@ CATEGORY_COLORS: dict[str, str] = {
     "transcription regulation": "#DDCC77",
     "moron, auxiliary metabolic gene and host takeover": "#AA4499",
     "other": "#999933",
-    "unknown function": "#DDDDDD",
+    "unknown function": "#BBBBBB",
 }
 
 BAR_WIDTH = 0.8
+UNSELECTED_OPACITY = 0.45
 _LANE_HEIGHT_PX = 34
 _BASE_HEIGHT_PX = 170
 _HOVER = (
@@ -118,6 +120,10 @@ def genome_map(record: GenomeRecord, categories: Sequence[str] | None = None) ->
                 y=subset["y"],
                 width=BAR_WIDTH,
                 marker={"color": CATEGORY_COLORS[category], "line": {"width": 0}},
+                # Plotly fades unselected points to ~0.2 after a click, which washes out the
+                # whole map; keep the highlight but stay readable.
+                selected={"marker": {"opacity": 1.0}},
+                unselected={"marker": {"opacity": UNSELECTED_OPACITY}},
                 customdata=subset[["id", "type", "product", "where", "how"]].to_numpy(),
                 hovertemplate=_HOVER,
             )

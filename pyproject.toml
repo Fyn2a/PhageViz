@@ -33,5 +33,6 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]  # so tests can import app.py helpers
 addopts = "-m 'not network'"
 markers = ["network: live calls to NCBI (opt-in with -m network)"]

@@ -557,7 +557,9 @@ identity rule instead.
 - **Colours** (`CATEGORY_COLORS`, Paul Tol "muted"): head and packaging `#332288`, connector
   `#88CCEE`, tail `#44AA99`, lysis `#CC6677`, integration and excision `#882255`, DNA/RNA metabolism
   `#117733`, transcription regulation `#DDCC77`, moron/AMG/host takeover `#AA4499`, other
-  `#999933`, unknown function `#DDDDDD`.
+  `#999933`, unknown function `#BBBBBB` (Tol's pale grey `#DDDDDD` was too faint on white).
+- **Selection styling:** after a click, the selected bar stays at full opacity and the others
+  drop to `UNSELECTED_OPACITY = 0.45` (Plotly's default fade of ~0.2 washed out the whole map).
 - **Axes:** x range `[0, L]` with a range slider; y fixed (no vertical zoom); figure height grows
   with the number of lanes. A genome with no features shows "No genes to show".
 - **Category filter:** names outside the 10 categories raise `ValueError` (a programming error,
@@ -601,6 +603,26 @@ Built with Biopython `SeqRecord` and `SeqFeature`. Each CDS has `locus_tag`, `pr
 | Rotation start gene | `st.session_state["start_gene"]` | — |
 
 When a new genome loads, `gene_id` and `start_gene` are cleared so stale selections don't carry over.
+"New genome" means a different `"{source}:{record id}:{rotation_offset}"` key
+(`st.session_state["loaded_key"]`); the map widget key includes it, so the chart's own selection
+resets too.
+
+**`app.py` structure.** Pure helpers (`md_escape`, `selected_gene_id`, `search_features`,
+`location_text`, `wrap_protein`) sit at module level and are unit-tested by importing `app`; the
+page runs only under `if __name__ == "__main__"` (Streamlit and `AppTest` both run it that way).
+
+**Behaviour (M1):**
+- Sidebar: source `Demo` (lambda by default) or `Upload` (any extension; format comes from
+  content). A record picker appears when a file holds several records.
+- Every `LoadResult` warning is shown with `st.warning`.
+- Map tab: `st.plotly_chart(on_select="rerun", selection_mode="points")`. A click stores
+  `customdata[0]` in `gene_id`; an empty selection keeps the previous gene. The panel shows ID,
+  product, type, real coordinates (both parts for origin-crossing genes), length, category
+  (with "keyword match, approximate" when applicable) and the protein in `st.code` (copy button),
+  60 residues per line.
+- Table tab: one search box matching product or ID, literal and case-insensitive
+  (`regex=False`, so input like `(` can't break it); rows sorted by start, strand as `+`/`−`.
+- A caption labels keyword categories as approximate and recommends Pharokka.
 
 ## 11. Edge cases
 
@@ -680,7 +702,14 @@ base = "light"
 
 - Uploads are read into memory with `getvalue()` and never written to disk.
 - No uploaded content is executed or passed to a shell.
-- Logs contain only error types and record IDs, never sequences or filenames.
+- Logs contain only error types and record IDs, never sequences or filenames. Unexpected
+  exceptions are logged as the type plus `file:line in function` for each frame; the exception
+  message and source lines are not logged, since the message may contain user data.
+- `.streamlit/config.toml` sets `client.showErrorDetails = "none"`, so no traceback reaches the
+  browser even if an exception escapes `app.py`'s handlers.
 - The NCBI email and API key live in Streamlit secrets; `secrets.toml` is in `.gitignore`.
 - Only accessions and search terms go to NCBI. Uploaded sequences are never sent to any outside service.
 - HTML in record titles or product names is escaped before display (no `unsafe_allow_html` on user data).
+  Streamlit renders Markdown in `st.subheader`/`st.markdown`/`st.caption`, so user text shown
+  there goes through `app.md_escape` (links, images and emphasis are shown literally); Plotly
+  hover text is HTML-escaped (§8.6).

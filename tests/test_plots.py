@@ -9,7 +9,7 @@ import pytest
 
 from phageviz.models import CATEGORIES, GenomeRecord, features_from_rows
 from phageviz.parsers import load
-from phageviz.plots import CATEGORY_COLORS, assign_lanes, genome_map
+from phageviz.plots import CATEGORY_COLORS, UNSELECTED_OPACITY, assign_lanes, genome_map
 
 ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT / "data" / "demo"
@@ -234,3 +234,9 @@ def test_height_grows_with_lanes() -> None:
         record([gene("a", 1, 100), gene("b", 50, 150), gene("c", 60, 160)])
     ).layout.height
     assert stacked > one
+
+
+def test_selection_keeps_unselected_bars_readable(demos) -> None:
+    for trace in genome_map(demos["t7"]).data:
+        assert trace.selected.marker.opacity == 1.0
+        assert trace.unselected.marker.opacity == UNSELECTED_OPACITY
