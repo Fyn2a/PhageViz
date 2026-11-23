@@ -2,179 +2,178 @@
 
 **Interactive bacteriophage genome annotation viewer, built with Streamlit.**
 
-Load a phage genome from a file or straight from NCBI. PhageViz shows it as an interactive map coloured by function, with GC content and GC skew tracks, a searchable gene table, genome statistics and a hallmark-gene check. You can download every result.
+Load a phage genome and see it as an interactive map coloured by gene function. Click any gene to
+see its coordinates, category and protein sequence, or search the gene table.
 
-<!-- Replace with a real screenshot or GIF once the app runs -->
-![PhageViz screenshot](docs/screenshot.png)
+> **Status: in development, milestone 1 of 5 complete.** The core viewer works today (demo
+> genomes and GenBank upload). NCBI fetch, analysis tabs, more input formats and exports are
+> planned; see [Roadmap](#roadmap) for what's done and what isn't.
 
-> **Live demo:** _add your Streamlit Community Cloud or Hugging Face Spaces link here_
+![PhageViz showing phage lambda, with gene A selected](docs/screenshot.png)
+
+*Phage lambda (NC_001416): genes on the + strand above the axis and the − strand below, coloured
+by functional category. Clicking the terminase large subunit (gene A) shows its details and
+protein sequence.*
+
+> **Live demo:** planned for milestone 5.
 
 ---
 
-## Features
+## Roadmap
 
-- **Three ways to load a genome**
-  - Upload a GenBank, GFF3 or FASTA file
-  - Fetch a genome from **NCBI** by accession (e.g. `NC_001416`) or search by name
-  - One-click demo genomes (phage lambda, T7, T4)
-- **Interactive genome map:** forward and reverse strands, genes coloured by PHROG functional category, zoom, pan and click-to-inspect
-- **GC content and GC skew tracks** with an adjustable window size
-- **Gene table:** searchable and filterable, with protein sequences
-- **Genome summary:** length, GC%, coding density, % hypothetical proteins, strand bias, category breakdown
-- **Hallmark check:** whether terminase, portal, major capsid, endolysin and holin genes are present
-- **Gene calling for raw FASTA** with `pyrodigal`, plus keyword-based functional categories
-- **Genome rotation:** set any gene (usually the terminase large subunit) as position 1
-- **Downloads:** CSV, protein FASTA, GenBank, and map figures as SVG or PNG
+| Milestone | Scope | Status |
+|---|---|---|
+| **M1: Core viewer** | Data model, GenBank parser, demo genomes, genome map, gene table, click-to-inspect | **Done** |
+| **M2: NCBI** | Fetch by accession, search by name, caching, error handling, secrets | In progress |
+| **M3: Analysis** | GC content and GC skew tracks, Summary tab, hallmark-gene check, category filter | Planned |
+| **M4: Raw input and export** | FASTA upload with gene prediction, GFF3 upload, CSV / FASTA / SVG / PNG downloads | Planned |
+| **M5: Polish and ship** | Genome rotation, GenBank export, CI, Docker, public deployment | Planned |
+
+### Features
+
+**Loading a genome**
+- [x] One-click demo genomes: phage lambda, T7 and T4
+- [x] Upload a GenBank file (`.gb`, `.gbk`, `.gbff`), optionally gzipped, with several records per file
+- [x] Pharokka GenBank output: PHROG categories read from the `function` qualifier
+- [x] Clear error messages for unreadable, empty or unsupported files
+- [ ] Fetch from NCBI by accession, e.g. `NC_001604` (M2)
+- [ ] Search NCBI by phage name (M2)
+- [ ] Upload FASTA and predict genes with `pyrodigal` (M4)
+- [ ] Upload GFF3 with an embedded sequence (M4)
+
+**Exploring**
+- [x] Strand-aware gene map coloured by functional category (colour-blind-safe palette)
+- [x] Overlapping genes stacked into rows so none are hidden
+- [x] Zoom and pan with a range slider
+- [x] Click a gene to see its product, coordinates, length, category and protein sequence
+- [x] Searchable gene table (product or locus tag)
+- [x] Keyword-based categories clearly labelled as approximate
+- [ ] GC content and GC skew tracks (M3)
+- [ ] Summary tab: GC%, coding density, % hypothetical, strand bias (M3)
+- [ ] Hallmark-gene check: terminase, portal, capsid, endolysin, holin, integrase (M3)
+- [ ] Filter the map and table by category (M3)
+- [ ] Rotate the genome to start at a chosen gene (M5)
+
+**Exporting**
+- [ ] Gene table as CSV (M4)
+- [ ] Protein sequences as FASTA (M4)
+- [ ] Map as SVG or PNG (M4)
+- [ ] Genome as GenBank, including predicted genes and rotation (M5)
 
 ---
 
 ## Quick start
 
-### 1. Clone and install
+Requires **Python 3.10+**.
 
 ```bash
 git clone https://github.com/<your-username>/phageviz.git
 cd phageviz
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-Requires **Python 3.10+**.
-
-### 2. Configure NCBI access (needed for the NCBI feature only)
-
-NCBI asks every Entrez user to give an email address. Create `.streamlit/secrets.toml`:
-
-```toml
-[ncbi]
-email = "you@example.com"
-api_key = ""   # optional: raises the rate limit from 3 to 10 requests per second
-```
-
-You can get a free API key from your NCBI account settings. **Never commit `secrets.toml`.** It is already listed in `.gitignore`.
-
-Without this file, the app still runs, and the NCBI tab shows a configuration message.
-
-### 3. Run
-
-```bash
+pip install -r requirements.txt    # add requirements-dev.txt for tests and linting
 streamlit run app.py
 ```
 
-The app opens at `http://localhost:8501`.
+The app opens at `http://localhost:8501` with phage lambda loaded.
 
-### Run with Docker
-
-```bash
-docker build -t phageviz .
-docker run -p 8501:8501 -v $(pwd)/.streamlit:/app/.streamlit phageviz
-```
-
----
+NCBI access will need an email address in `.streamlit/secrets.toml`; setup instructions arrive
+with milestone 2.
 
 ## Usage
 
-1. Choose an input source in the sidebar: **Demo**, **Upload** or **NCBI**.
-2. For NCBI, type an accession (`NC_001416`) or a name (`Escherichia phage T7`), pick a result and click **Fetch**.
-3. If the file holds more than one record, pick the one you want.
-4. Look through the tabs: **Map**, **Table**, **Summary**, **Hallmarks**.
-5. Click a gene on the map to see its details and protein sequence.
-6. Download results from the **Table** and **Map** tabs.
+1. Choose **Demo** or **Upload** in the sidebar.
+2. If an uploaded file holds more than one record, pick one.
+3. **Map** tab: hover over a gene for a summary, click it for full details and its protein
+   sequence (with a copy button).
+4. **Table** tab: search by product name or locus tag.
 
 ---
 
-## Inputs
+## Engineering notes
 
-| Input | Formats | Notes |
-|---|---|---|
-| Annotated genome | GenBank (`.gb`, `.gbk`, `.gbff`), GFF3 (`.gff`, `.gff3`) | Pharokka output is supported; PHROG categories are read when present |
-| Raw genome | FASTA (`.fa`, `.fasta`, `.fna`) | Genes are called with `pyrodigal` |
-| NCBI accession | RefSeq (`NC_001416`) or GenBank (`J02459`), version optional | Fetched as GenBank through NCBI E-utilities |
-| NCBI search | Free-text name | Returns up to 20 matching complete genomes |
-| Settings | Sidebar | GC window size, category filter, rotation start gene |
+Things this project gets right that are easy to get wrong:
 
-Limits: 50 MB upload, 1,000,000 bp per genome.
+- **One data model for every input.** Every source becomes a `GenomeRecord` that validates itself
+  on creation (column types, coordinates, strands, unique IDs), so plotting and export code never
+  has to check where data came from.
+- **Coordinates.** Internal positions are 1-based and inclusive, converted once from Biopython's
+  0-based half-open locations. Genes that cross the origin of a circular genome are stored
+  "unwrapped" (end beyond the genome length) so `start ≤ end` always holds.
+- **Biology details.** Genes starting with alternative start codons (GTG, TTG) are translated with
+  methionine first, except for genes marked as 5'-partial. Lambda's own gene A starts with GTG.
+- **Safe display of user data.** Product names and record titles are escaped before they reach
+  Markdown or chart tooltips; unexpected errors show a generic message and are logged without
+  user data.
+- **Tests.** 243 tests at the end of M1 with 100% line coverage of `src/`, checked against the
+  real lambda, T7 and T4 records. Key code was also mutation-tested (deliberately broken to make
+  sure a test fails).
 
-## Outputs
-
-| Output | Where | Format |
-|---|---|---|
-| Genome map with GC and skew tracks | Map tab | Interactive; export as SVG or PNG |
-| Gene detail panel | Map tab | On screen |
-| Gene table | Table tab | Interactive; export as CSV |
-| Protein sequences | Table tab | FASTA |
-| Annotated genome | Table tab | GenBank |
-| Genome statistics and category chart | Summary tab | On screen |
-| Hallmark presence/absence | Hallmarks tab | On screen |
+Design decisions are recorded in [docs/SPEC.md](docs/SPEC.md); requirements are in
+[docs/PRD.md](docs/PRD.md).
 
 ---
+
+## Inputs and limits
+
+| Input | Formats | Status |
+|---|---|---|
+| Annotated genome | GenBank (`.gb`, `.gbk`, `.gbff`), optionally gzipped | Supported |
+| Pharokka output | GenBank with `phrog` / `function` qualifiers | Supported |
+| NCBI accession or name | RefSeq (`NC_001416`) or GenBank (`J02459`) | M2 |
+| Raw genome | FASTA (`.fa`, `.fasta`, `.fna`) | M4 |
+| GFF3 | With an embedded `##FASTA` section | M4 |
+
+Limits: 50 MB upload, 1,000–1,000,000 bp per genome, first 50 records per file. The format is
+detected from the file's content, not its extension.
 
 ## Project structure
 
 ```
 phageviz/
-├── app.py                    # Streamlit UI
-├── requirements.txt
-├── Dockerfile
-├── .streamlit/
-│   ├── config.toml           # theme and upload size limit
-│   └── secrets.toml          # NCBI email and key (not committed)
-├── data/
-│   ├── demo/                 # lambda, T7, T4 GenBank files
-│   └── phrog_annot.tsv       # PHROG ID -> annotation and category
+├── app.py                  # Streamlit UI (widgets, tabs, caching, error display)
+├── pyproject.toml          # package metadata, ruff and pytest settings
+├── requirements.txt        # pinned runtime dependencies
+├── requirements-dev.txt    # + pytest, pytest-cov, ruff
+├── .streamlit/config.toml  # theme, upload limit, no tracebacks in the browser
+├── data/demo/              # lambda, T7, T4 GenBank files (RefSeq)
+├── scripts/fetch_demo.py   # one-off download of the demo genomes
 ├── src/phageviz/
-│   ├── models.py             # GenomeRecord data model
-│   ├── parsers.py            # GenBank, GFF3, FASTA
-│   ├── ncbi.py               # Entrez search and fetch
-│   ├── gene_calling.py       # pyrodigal wrapper
-│   ├── annotation.py         # functional categories, hallmarks
-│   ├── metrics.py            # GC, skew, summary stats
-│   ├── transforms.py         # genome rotation
-│   ├── exporters.py          # CSV, FASTA, GenBank
-│   └── plots.py              # Plotly figures
-├── tests/
-└── docs/
-    ├── PRD.md
-    └── SPEC.md
+│   ├── models.py           # GenomeRecord and the features schema
+│   ├── parsers.py          # GenBank parsing (GFF3 and FASTA in M4)
+│   ├── annotation.py       # functional categories (hallmarks in M3)
+│   ├── plots.py            # Plotly genome map
+│   └── errors.py           # user-facing error types
+├── tests/                  # mirrors src/; synthetic fixtures in tests/data/
+└── docs/                   # PRD.md, SPEC.md, screenshot
 ```
 
----
+Planned modules: `ncbi.py` (M2), `metrics.py` (M3), `gene_calling.py`, `exporters.py` (M4),
+`transforms.py` (M5).
 
 ## Testing
 
 ```bash
-pytest -q
+pip install -r requirements-dev.txt
+pytest -q                                   # all tests
+pytest --cov=src --cov-report=term-missing  # with coverage
+ruff check . && ruff format --check .       # lint
 ```
-
-The NCBI tests are marked `network` and skipped by default. Run them with `pytest -m network`.
-
-## Validation
-
-Gene calling compared with RefSeq annotations (a gene counts as a match when it has the same stop coordinate and strand):
-
-| Phage | RefSeq CDS | Predicted | Precision | Recall |
-|---|---|---|---|---|
-| Lambda (NC_001416) | _tbd_ | _tbd_ | _tbd_ | _tbd_ |
-| T7 (NC_001604) | _tbd_ | _tbd_ | _tbd_ | _tbd_ |
-| T4 (NC_000866) | _tbd_ | _tbd_ | _tbd_ | _tbd_ |
-
----
 
 ## Limitations
 
-- Keyword-based categories are rough. For publication-quality annotation, run [Pharokka](https://github.com/gbouras13/pharokka) and upload its GenBank output.
-- `pyrodigal` is not phage-specific, so some gene boundaries will differ from PHANOTATE or RefSeq.
+- Keyword-based categories are approximate. For publication-quality annotation, run
+  [Pharokka](https://github.com/gbouras13/pharokka) and upload its GenBank output.
+- GenBank files without annotated genes can't be shown until gene prediction arrives (M4).
 - Genetic code 11 is used by default.
-- NCBI fetches depend on NCBI availability and rate limits.
 
 ## Data sources and credits
 
-- **NCBI Nucleotide** via E-utilities and Biopython `Bio.Entrez`
+- **NCBI RefSeq** records for the demo genomes (lambda NC_001416.1, T7 NC_001604.1, T4 NC_000866.4)
 - **PHROGs** functional categories (Terzian et al., 2021, *NAR Genomics and Bioinformatics*)
-- **Pyrodigal** (Larralde, 2022, *JOSS*), Cython bindings to Prodigal (Hyatt et al., 2010)
 - **Biopython** (Cock et al., 2009, *Bioinformatics*)
+- Colour palette: Paul Tol's "muted" colour-blind-safe scheme
 
 ## License
 
-MIT. See `LICENSE`.
+MIT (license file to be added).
