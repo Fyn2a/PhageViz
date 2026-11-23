@@ -206,6 +206,8 @@ def call_genes(record: GenomeRecord, table: int = 11) -> pd.DataFrame
 
 # annotation.py
 def categorize(product: str) -> str
+def assign_categories(types: pd.Series, products: pd.Series,
+                      functions: pd.Series) -> pd.DataFrame  # category, category_source
 def apply_categories(df: pd.DataFrame, phrog_map: pd.DataFrame) -> pd.DataFrame
 def hallmark_check(df: pd.DataFrame) -> pd.DataFrame
 
@@ -388,6 +390,20 @@ If the record title doesn't contain `phage` or `virus` (case-insensitive), show 
 1. Pharokka `function` qualifier, if it matches a PHROG category → `category_source="phrog"`
 2. `phrog` ID looked up in `data/phrog_annot.tsv` → `"phrog"`
 3. Keyword rules on `product` (first match wins) → `"keyword"`
+
+**Where each step runs.** The `function` qualifier has no column in the features schema, so steps
+1 and 3 run in the parser through `annotation.assign_categories(types, products, functions)`,
+which is vectorised over all features. Step 2 runs afterwards in
+`apply_categories(df, phrog_map)`, which only upgrades rows whose `category_source` is `keyword`
+and whose `phrog` ID is in the map; rows set from `function` are never touched, so the priority
+order holds. `categorize(product)` is the single-value form of step 3: a plain-Python loop over the same
+`KEYWORD_RULES` table (a one-row pandas path costs ~25 ms per call); a test checks both paths
+agree on every T4 product.
+
+**`function` matching.** The qualifier matches a category when it equals one of the 10 names in
+§4.3 after trimming, collapsing whitespace and ignoring case. Anything else (including `tRNA` or
+a missing value) falls through to the keyword rules. A missing or blank `product` is treated as
+`hypothetical protein`.
 
 | Category | Regex (case-insensitive) |
 |---|---|
