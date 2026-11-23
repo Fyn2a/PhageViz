@@ -231,6 +231,8 @@ def to_protein_fasta(record: GenomeRecord) -> bytes
 def to_genbank(record: GenomeRecord) -> bytes
 
 # plots.py
+CATEGORY_COLORS: dict[str, str]                                   # §8.6
+def assign_lanes(features: pd.DataFrame, length: int) -> pd.Series
 def genome_map(record: GenomeRecord, categories: list[str] | None) -> go.Figure
 def gc_tracks(windows: pd.DataFrame, length: int) -> go.Figure
 def category_chart(df: pd.DataFrame) -> go.Figure
@@ -535,6 +537,31 @@ Reverse-strand start genes are rotated to their `start` coordinate. **Invariant:
 `2 ≤ k ≤ L`, `rotate(rotate(r, k), L - k + 2)` returns the original coordinates (tested). The
 `k = 1` case is excluded because `L - k + 2 = L + 1` is out of range; it is covered by the
 identity rule instead.
+
+### 8.6 Genome map
+
+- **Traces:** one `go.Bar(orientation="h")` per category present, in §4.3 order, with
+  `barmode="overlay"` (the default `group` would shift each category's bars sideways).
+- **Geometry:** `base = start - 1`, `x = end - start + 1`, so a bar covers exactly bases
+  `start..end`. Origin-crossing features are two bars (`start..L` and `1..end-L`) with the same ID.
+- **Lanes:** `assign_lanes` packs each strand separately. Origin-crossing features go first, one
+  per lane, and reserve both ends of it; the rest are placed by `start` into the lowest lane whose
+  last end is `< start` and whose reserved end region is `> end`. Touching features share a lane.
+  Forward lanes are drawn at `y = lane + 1`, reverse at `y = -(lane + 1)`. Lanes are computed on
+  all features before the category filter, so filtering never moves a gene.
+- **Selection:** `customdata[0]` is the feature ID; `app.py` maps `on_select` points to
+  `st.session_state["gene_id"]`.
+- **Hover:** ID, type, product, real coordinates and strand ("crosses origin" when wrapped),
+  protein length, and category, with "(keyword match, approximate)" for keyword categories. IDs
+  and products are HTML-escaped because Plotly renders a subset of HTML tags in hover text.
+- **Colours** (`CATEGORY_COLORS`, Paul Tol "muted"): head and packaging `#332288`, connector
+  `#88CCEE`, tail `#44AA99`, lysis `#CC6677`, integration and excision `#882255`, DNA/RNA metabolism
+  `#117733`, transcription regulation `#DDCC77`, moron/AMG/host takeover `#AA4499`, other
+  `#999933`, unknown function `#DDDDDD`.
+- **Axes:** x range `[0, L]` with a range slider; y fixed (no vertical zoom); figure height grows
+  with the number of lanes. A genome with no features shows "No genes to show".
+- **Category filter:** names outside the 10 categories raise `ValueError` (a programming error,
+  not user input).
 
 ## 9. Output specifications
 
