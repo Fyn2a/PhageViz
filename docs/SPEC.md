@@ -188,11 +188,17 @@ def validate_features(df: pd.DataFrame, length: int | None = None) -> None   # r
 def feature_parts(start: int, end: int, length: int) -> list[tuple[int, int]]
 
 # parsers.py
+@dataclass(frozen=True)
+class LoadResult:
+    records: tuple[GenomeRecord, ...]   # at least one
+    warnings: tuple[str, ...] = ()      # user-facing; app.py shows them with st.warning
+
+def decode(data: bytes) -> str                                   # gzip, BOM, encoding, newlines
 def detect_format(text: str) -> Literal["genbank", "gff3", "fasta"]
-def parse_genbank(text: str, source: str) -> list[GenomeRecord]
-def parse_gff3(text: str, source: str) -> list[GenomeRecord]
-def parse_fasta(text: str, source: str) -> list[GenomeRecord]   # features empty
-def load(data: bytes, filename: str, source: str) -> list[GenomeRecord]
+def parse_genbank(text: str, source: str) -> LoadResult
+def parse_gff3(text: str, source: str) -> LoadResult             # M4
+def parse_fasta(text: str, source: str) -> LoadResult            # M4; features empty
+def load(data: bytes, source: str) -> LoadResult
 
 # ncbi.py
 def configure(email: str, api_key: str | None) -> None
@@ -255,13 +261,40 @@ The file extension is only a hint for the uploader's file picker.
 
 ### 6.2 GenBank
 
-- Parse with `SeqIO.parse(StringIO(text), "genbank")`.
+- Parse with `SeqIO.parse(StringIO(text), "genbank")`, with `BiopythonWarning` silenced
+  (cosmetic issues such as odd LOCUS spacing). Any exception from Biopython becomes `ParseError`.
 - Keep feature types `CDS`, `tRNA`, `tmRNA`. Skip `gene` (it duplicates `CDS`) and `source`.
-- Qualifiers read: `locus_tag`, `product`, `translation`, `phrog` (Pharokka), `function` (Pharokka category).
-- If `translation` is missing, translate with `table=11, cds=False, to_stop=True`.
-- Topology from `rec.annotations.get("topology", "linear")`.
+- Qualifiers read: `locus_tag`, `product`, `translation`, `transl_table`, `codon_start`, `phrog`
+  (Pharokka), `function` (Pharokka category). Only the first value of each is used.
+- **Product:** RNA genes without a `product` use their type (`"tRNA"`); CDS default to
+  `"hypothetical protein"`.
+- **PHROG ID:** `"15"`, `"phrog15"` and `"phrog_15"` (any case) become `"phrog_15"`; anything else
+  (e.g. `"No_PHROG"`) is missing.
+- **Translation:** the `translation` qualifier (trailing `*` stripped) if present. Otherwise the
+  feature is extracted (strand- and join-aware, so it works across the origin), offset by
+  `codon_start`, trimmed to whole codons and translated with `table=transl_table or 11,
+  cds=False, to_stop=True`. If the first codon is a start codon of that table (e.g. GTG, TTG),
+  the first residue is set to `M`, because alternative start codons initiate with Met; this is
+  skipped for 5'-partial genes (`<` on +, `>` on −) and when `codon_start != 1`, since those don't
+  begin at their real start. An unknown table gives `aa=<NA>`. (Lambda gene `A` starts with GTG;
+  plain `cds=False` translation would wrongly start it with `V`.)
+- **Coordinates** (§4.4): simple locations use `start + 1`, `end`. Joins use outer bounds. A join
+  whose parts, put in genome order (minus-strand parts are listed in reading order by Biopython,
+  so they are reversed), jump back once to a lower position crosses the origin and is stored
+  unwrapped (`end + L`). Biopython's own `location.start/end` can't be used for these: it reports
+  `0..L`.
+- **Skipped features** (left out, with one warning per record naming up to three): no location,
+  no single strand, unknown position, parts that jump back more than once, or crossing the origin
+  in a record whose topology is `linear` (topology is never inferred).
+- **IDs:** missing `locus_tag` → `{record_id}_{n:04d}`, where `n` is the 1-based position among
+  kept features; duplicates get `_2`, `_3`, … skipping any suffix already in use.
+- Topology from `rec.annotations.get("topology", "linear")`; any other value → `linear`.
 - **Pharokka detection:** any CDS has a `phrog` qualifier → `annotation_origin="pharokka"`.
-- No CDS features → treat like FASTA and run gene calling.
+- No CDS features → treat like FASTA and run gene calling. **Until M4** this raises
+  `UnsupportedFormat` ("has no annotated genes …").
+- **Record-level failures** (too short or long, no sequence, no CDS, `InvalidRecord`): the record
+  is skipped with a warning when other records load. If no record loads, the error itself is
+  raised for a single-record file, and a `ParseError` summarising the first problem otherwise.
 
 ### 6.3 GFF3
 
@@ -282,9 +315,30 @@ The file extension is only a hint for the uploader's file picker.
 | Upload size | 50 MB (`server.maxUploadSize` in `config.toml`) | Blocked by Streamlit |
 | Genome length | 1,000,000 bp | Reject record, show message |
 | Minimum length | 1,000 bp | Reject: "too short to be a phage genome" |
-| Encoding | UTF-8, falling back to latin-1 | Error if both fail |
-| Gzip | `.gz` detected by magic bytes `1f 8b` | Decompress, then parse |
-| Records per file | 50 | Show the first 50 with a warning |
+| Encoding | UTF-8 (BOM stripped), falling back to latin-1 | latin-1 decodes any bytes, so decoding never fails; binary input is rejected by `detect_format` |
+| Line endings | `\r\n` and `\r` | Normalised to `\n` on decode |
+| Gzip | Detected by magic bytes `1f 8b`, not file name | Decompress, then parse; corrupt data → `ParseError` |
+| Decompressed size | 100 MB | `ParseError` (guards against gzip bombs; a 1 Mb genome as GenBank is ~3 MB) |
+| Records per file | 50 | Load the first 50 with a warning; the rest are not parsed |
+
+Length limits are inclusive (1,000 and 1,000,000 bp are accepted) and are enforced in
+`parse_genbank`, so uploads and NCBI fetches share them. `load` takes no file name: the format
+comes from content and file names are never logged, so it has no use.
+
+M1 status: `load` detects GFF3 and FASTA but raises `UnsupportedFormat` ("… aren't supported yet")
+until M4.
+
+### 6.6 Input errors
+
+| Exception | Trigger |
+|---|---|
+| `UnsupportedFormat` | Empty file, unrecognised first line, GFF3/FASTA before M4, GenBank record without CDS before M4 |
+| `ParseError` | Malformed GenBank, corrupt or oversized gzip, no records, all records unusable |
+| `MissingSequence` | GenBank record without sequence (CON record) |
+| `RecordTooLarge` / `RecordTooShort` | Genome outside 1,000–1,000,000 bp (also used by NCBI, §7.6) |
+| `InvalidRecord` | Parsed data breaks the model (§4.5), e.g. a feature past the sequence end |
+
+All subclass `PhageVizError`; messages name the record ID and say what to do next.
 
 ## 7. NCBI Entrez integration
 
@@ -544,13 +598,18 @@ When a new genome loads, `gene_id` and `start_gene` are cleared so stale selecti
 
 ### 12.1 Fixtures (`tests/data/`)
 
-- `lambda.gbk`, `t7.gbk` (RefSeq)
-- `pharokka_sample.gbk` (small Pharokka output)
-- `sample.gff3` with `##FASTA`
-- `sample.fasta`, `multi_record.fasta`
-- `wraps_origin.gbk` (synthetic)
-- `malformed/` (truncated GenBank, binary file, empty file, GFF3 without FASTA)
-- `ncbi_esummary.xml`, `ncbi_efetch.gbk` (saved responses for mocking)
+- Real genomes are read from `data/demo/` (lambda, T7, T4) rather than copied here.
+- `make_fixtures.py` regenerates the synthetic files below with fixed seeds. Designed ORFs are
+  built from a fixed codon table and their expected protein is stored in `/note="expected_aa=…"`,
+  so tests don't depend on a translator to know the right answer.
+  - `pharokka_sample.gbk`: Pharokka-style qualifiers, missing and duplicate locus tags, GTG
+    starts (complete and 5'-partial), tRNA without product
+  - `wraps_origin.gbk`: two circular records with origin-crossing ORFs (+ strand ATG start,
+    − strand GTG start), plus a feature ending on the last base
+- Malformed inputs (truncated GenBank, binary, empty, PNG, corrupt gzip, CON record, multi-record
+  files) are built inside the tests from the files above.
+- M4: `sample.gff3` with `##FASTA`, `sample.fasta`, `multi_record.fasta`, GFF3 without FASTA
+- M2: `ncbi_esummary.xml`, `ncbi_efetch.gbk` (saved responses for mocking)
 
 ### 12.2 Test plan
 

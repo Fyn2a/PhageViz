@@ -1,0 +1,81 @@
+LOCUS       PHAGE_1                 2000 bp    DNA     linear   UNK 01-JAN-1980
+DEFINITION  Synthetic phage annotated by Pharokka.
+ACCESSION   PHAGE_1
+VERSION     PHAGE_1.1
+KEYWORDS    .
+SOURCE      .
+  ORGANISM  .
+            .
+FEATURES             Location/Qualifiers
+     source          1..2000
+     gene            101..109
+                     /locus_tag="pk_0001"
+     CDS             101..109
+                     /locus_tag="pk_0001"
+                     /product="portal protein"
+                     /phrog="phrog_15"
+                     /function="head and packaging"
+     CDS             complement(201..209)
+                     /locus_tag="pk_0002"
+                     /product="hypothetical protein"
+                     /phrog="136"
+                     /function="Tail"
+     CDS             301..600
+                     /locus_tag="pk_0003"
+                     /product="hypothetical protein"
+                     /phrog="No_PHROG"
+                     /function="unknown function"
+                     /translation="MSTV*"
+     CDS             701..1000
+                     /product="endolysin"
+                     /translation="MEND"
+     CDS             1011..1019
+                     /locus_tag="pk_gtg"
+     CDS             <1021..1029
+                     /locus_tag="pk_partial"
+     CDS             1101..1400
+                     /locus_tag="dup"
+                     /translation="MD"
+     CDS             complement(1401..1700)
+                     /locus_tag="dup"
+                     /translation="MDD"
+     tRNA            1801..1876
+                     /locus_tag="pk_trna"
+                     /function="tRNA"
+     misc_feature    1900..1950
+ORIGIN
+        1 aaagcggcac ttgtgaagtg ttccccacgc cgcttgggtc ttctgtgttg ttcgcgtggt
+       61 gctgagacaa agcacgccat aaggccaaaa aaaggcccat atgaaataat agtagtctca
+      121 gaatcttgcg ggtacagacc catcacctag acggtgacat tcaacaaacc acattgtcct
+      181 taatcatgaa ggggataagc ttaggccatg aggactcagt tcgtagaaag tcaatatggt
+      241 cggttttgtc ctgtaaagcc taaacgtcgt cgactagcgc ctctgcttat ctatgtgttg
+      301 gaccttagtt caatctcatc gctcattgct cagatatgtg taagctgcac tttgcagtag
+      361 attcgtctga gggggtactc agactcgaaa tgcggagtgc ttgtctcggc actcgcgccc
+      421 gttgggtgag gttcggttac gtcaagcgat agctgtcggc taccggctgg agcccaggac
+      481 cattgcgagt catttgattt ctttaatcac atgtagagcc actagtatca tcacaacagc
+      541 cgtacacatc actgtcaccc tcggtctctg gaatggtgct caaccctaca gtaccgacac
+      601 catgccggat tatgagactg gtctccttgt tgcttctgga cgtccgcgaa acgagggtat
+      661 tagcccctat gattccgccg ttccagcctt atttttgccc aaaatttcga ggtatcgaat
+      721 acccgcacga actcaggtag gagagggtgc aagtagaatt tcccaagcga acctagaacc
+      781 caatagcatt cctctgactt tctcgcagcc tgtttcttgc gatatgatgg cttgtcctgg
+      841 tactatttat tggccccttt ctggtgggat actaaagggt cgattctaag agtcaagtta
+      901 tccgcggttt gacgcggccc ctctgccatt gccctaccca atccgtaaga gagttaatcc
+      961 tagctaggac atccgtcagt accggaccca gagagacgct cgaagcaact gtgaaataaa
+     1021 gtggcctaaa ctctagttgc aactctcgaa ccagcccttt agcagataag gcgtcacccc
+     1081 tcagttaata aactactgcc gggcggtttt gtctgttgaa gttatgccga cctcctcagt
+     1141 cagccatatg cctcccgggc ataatcggat gctacggtgg agatccttct gacatacaag
+     1201 cttgaaacaa caggaaagga tctaccctag accacccaca ccggacccag tccctgaacg
+     1261 gggagatcgg ttacccatac tactctgctc agggtccgtg aaaacgatcc caaaatatta
+     1321 acaccaggac gcacaaatta acgacgacca tgtagcgtcc cttattgata ttctatgatg
+     1381 gtcccaagct tacaacagcc tgatcatgca cgacctttaa gtctattccg cacagagtgc
+     1441 accggacacg aattcatagc cagggtgtcg aaattttgta gaacgccagg gaaggccggt
+     1501 gggtttatac agttatttgt atgtcaacga gatgtctgtt gagcgacacc ggcgtcaaac
+     1561 tatgcgctat tgactctttg cttctgctta ggggctaaac cggccaagtg cccagtttgg
+     1621 cttattccgt gtcggtacgc tgcgcgcaat acaagctcgt gcatatccca tcgcagaagt
+     1681 aactctctca cagccgtggc tgaacgcccc ttgcgattcg gactgattta atttaccgtg
+     1741 ggtttccccc aaatattcgt caattccgca accccagacg acgagcccct atgtaccaga
+     1801 tatactgtac taccattgtt tgcgtgaaat agagaccggc agaaccagca tgagttcact
+     1861 ggctgaggca agtacgggta cgcgggcatc ttagtgggta gtgaatccat gtataccact
+     1921 taccagcctc gtactacgga aggttaggcg aagtactata tgctggggct gaggtgcacg
+     1981 tgtagtgagg aataatcgct
+//

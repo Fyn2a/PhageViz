@@ -13,3 +13,23 @@ class PhageVizError(Exception):
 
 class InvalidRecord(PhageVizError):
     """A genome record or its features table breaks the data model (SPEC section 4)."""
+
+
+class UnsupportedFormat(PhageVizError):
+    """The input isn't a format (or kind of file) PhageViz can load."""
+
+
+class ParseError(PhageVizError):
+    """The input looks like a supported format but can't be read."""
+
+
+class MissingSequence(PhageVizError):
+    """A record has annotation but no DNA sequence (e.g. a GenBank CON record)."""
+
+
+class RecordTooLarge(PhageVizError):
+    """A genome is longer than the supported maximum (SPEC 6.5)."""
+
+
+class RecordTooShort(PhageVizError):
+    """A genome is shorter than the supported minimum (SPEC 6.5)."""
