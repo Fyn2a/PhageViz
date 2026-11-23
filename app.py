@@ -17,7 +17,7 @@ import pandas as pd
 import streamlit as st
 
 from phageviz import ncbi, parsers, plots
-from phageviz.errors import PhageVizError
+from phageviz.errors import InvalidAccession, PhageVizError
 from phageviz.models import GenomeRecord, feature_parts
 from phageviz.ncbi import NcbiSummary
 
@@ -121,21 +121,30 @@ def read_ncbi_secrets(secrets: Mapping[str, Any]) -> tuple[str, str | None] | No
 
 
 def result_label(summary: NcbiSummary) -> str:
-    """One search result as shown in the picker."""
+    """One search result as shown in the picker; title first, since the sidebar cuts labels."""
     refseq = " · RefSeq" if summary.is_refseq else ""
     title = summary.title if len(summary.title) <= 70 else summary.title[:69] + "…"
-    return f"{summary.accession}{refseq} · {summary.length:,} bp · {title}"
+    return f"{title} · {summary.accession}{refseq} · {summary.length:,} bp"
 
 
-def fetch_target(query: str, picked: NcbiSummary | None) -> str:
+def fetch_target(query: str, picked: NcbiSummary | None, has_results: bool = False) -> str:
     """The accession Fetch should load: typed text if it is an accession, else the picked result.
+
+    Args:
+        query: Text in the search box.
+        picked: The chosen search result, or None (the picker starts empty).
+        has_results: Whether search results are on screen, for a more helpful message.
 
     Raises:
         InvalidAccession: The text isn't an accession and no search result is picked.
     """
-    if ncbi.looks_like_accession(query) or picked is None:
+    if ncbi.looks_like_accession(query):
         return ncbi.validate_accession(query)
-    return picked.accession
+    if picked is not None:
+        return picked.accession
+    if has_results:
+        raise InvalidAccession("Choose one of the search results, then click Fetch.")
+    return ncbi.validate_accession(query)  # raises with the "doesn't look like" message
 
 
 # --- cached loaders --------------------------------------------------------------
@@ -215,6 +224,9 @@ def choose_ncbi() -> parsers.LoadResult | None:
     search_col, fetch_col = st.sidebar.columns(2)
     if search_col.button("Search", key="ncbi_search", width="stretch"):
         st.session_state.pop("ncbi_results", None)
+        # The picker stores a position; a new search must not inherit the old one, or it would
+        # silently point at a different record.
+        st.session_state.pop("ncbi_pick", None)
         st.session_state["ncbi_results"] = cached_search(query.strip())
 
     results: list[NcbiSummary] = st.session_state.get("ncbi_results") or []
@@ -223,14 +235,16 @@ def choose_ncbi() -> parsers.LoadResult | None:
         index = st.sidebar.selectbox(
             "Search results",
             range(len(results)),
+            index=None,  # nothing pre-selected: Fetch loads only a record the user chose
+            placeholder="Choose a result",
             format_func=lambda i: result_label(results[i]),
             key="ncbi_pick",
         )
-        picked = results[index]
+        picked = None if index is None else results[index]
         st.sidebar.caption(f"{len(results)} complete genomes, RefSeq records first.")
 
     if fetch_col.button("Fetch", key="ncbi_fetch", type="primary", width="stretch"):
-        st.session_state["ncbi_accession"] = fetch_target(query, picked)
+        st.session_state["ncbi_accession"] = fetch_target(query, picked, bool(results))
 
     accession = st.session_state.get("ncbi_accession")
     if accession is None:

@@ -129,11 +129,11 @@ def test_read_ncbi_secrets(secrets, expected) -> None:
 def test_result_label_marks_refseq_and_shortens_titles() -> None:
     refseq = NcbiSummary("NC_001604.1", "Escherichia phage T7, complete genome", 39_937, "1")
     long = NcbiSummary("PX1.1", "x" * 100, 1_000, "2")
+    # Title first: the narrow sidebar cuts off the end of the label.
     assert app.result_label(refseq) == (
-        "NC_001604.1 · RefSeq · 39,937 bp · Escherichia phage T7, complete genome"
+        "Escherichia phage T7, complete genome · NC_001604.1 · RefSeq · 39,937 bp"
     )
-    label = app.result_label(long)
-    assert label.endswith("x" * 69 + "\u2026") and "RefSeq" not in label
+    assert app.result_label(long) == "x" * 69 + "… · PX1.1 · 1,000 bp"
 
 
 @pytest.mark.parametrize(
@@ -152,5 +152,12 @@ def test_fetch_target(query: str, picked: str | None, expected: str) -> None:
 
 @pytest.mark.parametrize("query", ["phage T7", ""])
 def test_fetch_target_without_accession_or_pick_raises(query: str) -> None:
-    with pytest.raises(InvalidAccession):
+    with pytest.raises(InvalidAccession, match="doesn't look like an accession"):
         app.fetch_target(query, None)
+
+
+def test_fetch_target_asks_for_a_choice_when_results_are_shown() -> None:
+    with pytest.raises(InvalidAccession, match="Choose one of the search results"):
+        app.fetch_target("phage T7", None, has_results=True)
+    # A typed accession still works while results are on screen.
+    assert app.fetch_target("NC_001416", None, has_results=True) == "NC_001416"

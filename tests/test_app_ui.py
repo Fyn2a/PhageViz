@@ -27,8 +27,19 @@ def clear_cache() -> None:
     st.cache_resource.clear()
 
 
+def new_app() -> AppTest:
+    """An AppTest isolated from the developer's real .streamlit/secrets.toml.
+
+    AppTest only replaces st.secrets when a test supplies secrets; with none it reads the real
+    file. A placeholder section keeps every test independent of the machine it runs on.
+    """
+    at = AppTest.from_file(APP, default_timeout=TIMEOUT)
+    at.secrets["test_isolation"] = {"real_secrets_file": "not used"}
+    return at
+
+
 def run_app() -> AppTest:
-    return AppTest.from_file(APP, default_timeout=TIMEOUT).run()
+    return new_app().run()
 
 
 def texts(at: AppTest) -> str:
@@ -210,7 +221,7 @@ def fake(monkeypatch: pytest.MonkeyPatch) -> FakeNcbi:
 
 
 def ncbi_app(secrets: dict | None = None) -> AppTest:
-    at = AppTest.from_file(APP, default_timeout=TIMEOUT)
+    at = new_app()
     if secrets is not None:
         at.secrets["ncbi"] = secrets
     at.run()
@@ -256,9 +267,10 @@ def test_search_then_pick_and_fetch(fake: FakeNcbi) -> None:
     at = type_and_click(ncbi_app(SECRETS), "Escherichia phage T7", "ncbi_search")
     picker = at.sidebar.selectbox(key="ncbi_pick")
     assert picker.options == [
-        "NC_001604.1 · RefSeq · 39,937 bp · Escherichia phage T7, complete genome",
-        "PX872939.1 · 39,048 bp · Escherichia phage T7 isolate X, complete genome",
+        "Escherichia phage T7, complete genome · NC_001604.1 · RefSeq · 39,937 bp",
+        "Escherichia phage T7 isolate X, complete genome · PX872939.1 · 39,048 bp",
     ]
+    assert picker.value is None  # nothing pre-selected
     picker.set_value(1).run()
     at.sidebar.button(key="ncbi_fetch").click().run()
     assert ("search", "Escherichia phage T7") in fake.calls
@@ -314,3 +326,18 @@ def test_error_messages_are_markdown_escaped(fake: FakeNcbi) -> None:
     fake.summary_error = AccessionNotFound("bad **bold** [link](http://x)")
     at = type_and_click(ncbi_app(SECRETS), "NC_001416", "ncbi_fetch")
     assert r"\*\*bold\*\* \[link\]\(http://x\)" in at.error[0].value
+
+
+def test_fetch_after_search_without_choosing_asks_for_a_choice(fake: FakeNcbi) -> None:
+    at = type_and_click(ncbi_app(SECRETS), "Escherichia phage T7", "ncbi_search")
+    at.sidebar.button(key="ncbi_fetch").click().run()
+    assert "Choose one of the search results" in at.error[0].value
+    assert fake.count("summarize") == 0  # nothing was loaded by default
+
+
+def test_new_search_clears_the_previous_choice(fake: FakeNcbi) -> None:
+    at = type_and_click(ncbi_app(SECRETS), "Escherichia phage T7", "ncbi_search")
+    at.sidebar.selectbox(key="ncbi_pick").set_value(1).run()
+    fake.results = [OTHER, T7]  # a different search with the same number of results
+    type_and_click(at, "phage T7 isolate", "ncbi_search")
+    assert at.sidebar.selectbox(key="ncbi_pick").value is None

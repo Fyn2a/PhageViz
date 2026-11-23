@@ -693,11 +693,22 @@ page runs only under `if __name__ == "__main__"` (Streamlit and `AppTest` both r
 - NCBI (M2): without a usable `[ncbi]` secrets section (`read_ncbi_secrets`; a missing file
   raises a `FileNotFoundError` subclass) the main area shows setup instructions and nothing
   is called. Otherwise the sidebar has a text box, **Search** and **Fetch**. Search stores
-  results in `ncbi_results` and shows a picker labelled `accession · RefSeq · length · title`.
-  Fetch loads the typed text if it is an accession, else the picked result; a name with no
-  search raises `InvalidAccession` (`fetch_target`). Then summary → `check_length` → raw text
-  → parsed record, all cached. A record whose title lacks "phage"/"virus" gets the §7.7
-  warning. Every message from `src/` is shown through `md_escape` (§7.6).
+  results in `ncbi_results` and shows a picker labelled `title · accession · RefSeq · length`
+  (title first, because the narrow sidebar cuts the end of long labels off). The picker starts
+  **empty** ("Choose a result"), so Fetch never loads a record the user didn't choose: in the
+  live check, the first RefSeq hit for "Escherichia phage T7" was Proteus phage Privateer, not
+  T7. Each new search also clears `ncbi_pick`, because the picker stores a position and would
+  otherwise point at a different record in the new results.
+  Fetch loads the typed text if it is an accession, else the picked result. Otherwise
+  `fetch_target` raises `InvalidAccession`: "Choose one of the search results, then click
+  Fetch." when results are shown, else the "doesn't look like an accession" message. Then
+  summary → `check_length` → raw text → parsed record, all cached. A record whose title lacks
+  "phage"/"virus" gets the §7.7 warning. Every message from `src/` is shown through
+  `md_escape` (§7.6).
+- Tests: every `AppTest` starts with a placeholder secrets section (`new_app()` in
+  `tests/test_app_ui.py`). AppTest only replaces `st.secrets` when a test supplies secrets;
+  otherwise the app reads the developer's real `.streamlit/secrets.toml`, which made the
+  no-secrets test machine-dependent once a real file existed.
 
 ## 11. Edge cases
 
