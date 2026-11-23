@@ -12,21 +12,25 @@ import pandas as pd
 
 from phageviz.models import CATEGORIES, DEFAULT_PRODUCT, RNA_CATEGORY, RNA_TYPES
 
-# Tried top to bottom; the first match wins. "connector" comes first so that
-# "head-tail connector" isn't caught by the "tail" rule.
+# Tried top to bottom; the first match wins. "connector" comes first so that "head-tail
+# connector" is caught neither by the broad "head" pattern nor by "tail".
 KEYWORD_RULES: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
     (category, re.compile(pattern, re.IGNORECASE))
     for category, pattern in (
         ("connector", r"head.tail|connector|neck|adaptor"),
-        ("lysis", r"holin|endolysin|lysozyme|spanin|lysis"),
-        ("head and packaging", r"terminase|portal|capsid|scaffold|packag|prohead"),
+        ("lysis", r"holin|endolysin|lysozyme|spanin|lysis|amidase"),
+        ("head and packaging", r"terminase|portal|capsid|scaffold|packag|head"),
         ("tail", r"tail|fib(?:er|re)|baseplate|sheath|tape.measure"),
         ("integration and excision", r"integrase|excisionase|recombinase|transposase"),
         (
             "DNA, RNA and nucleotide metabolism",
-            r"polymerase|helicase|primase|nuclease|ligase|reductase|kinase",
+            r"polymerase|helicase|primase|nuclease|ligase|reductase|kinase|topoisomerase"
+            r"|methyltransferase|replication|ssDNA",
         ),
-        ("transcription regulation", r"repressor|regulator|antiterminat|sigma|anti-sigma"),
+        (
+            "transcription regulation",
+            r"repressor|regulator|anti.?terminat|sigma|activator|transcription",
+        ),
         (
             "moron, auxiliary metabolic gene and host takeover",
             r"superinfection|exclusion|anti-restriction|toxin",

@@ -408,18 +408,27 @@ a missing value) falls through to the keyword rules. A missing or blank `product
 | Category | Regex (case-insensitive) |
 |---|---|
 | connector | `head.tail\|connector\|neck\|adaptor` |
-| lysis | `holin\|endolysin\|lysozyme\|spanin\|lysis` |
-| head and packaging | `terminase\|portal\|capsid\|scaffold\|packag\|prohead` |
-| tail | `tail\|fib(er\|re)\|baseplate\|sheath\|tape.measure` |
+| lysis | `holin\|endolysin\|lysozyme\|spanin\|lysis\|amidase` |
+| head and packaging | `terminase\|portal\|capsid\|scaffold\|packag\|head` |
+| tail | `tail\|fib(?:er\|re)\|baseplate\|sheath\|tape.measure` |
 | integration and excision | `integrase\|excisionase\|recombinase\|transposase` |
-| DNA, RNA and nucleotide metabolism | `polymerase\|helicase\|primase\|nuclease\|ligase\|reductase\|kinase` |
-| transcription regulation | `repressor\|regulator\|antiterminat\|sigma\|anti-sigma` |
+| DNA, RNA and nucleotide metabolism | `polymerase\|helicase\|primase\|nuclease\|ligase\|reductase\|kinase\|topoisomerase\|methyltransferase\|replication\|ssDNA` |
+| transcription regulation | `repressor\|regulator\|anti.?terminat\|sigma\|activator\|transcription` |
 | moron, auxiliary metabolic gene and host takeover | `superinfection\|exclusion\|anti-restriction\|toxin` |
 | unknown function | `hypothetical\|unknown\|uncharacteri[sz]ed\|DUF` |
 | other | no match |
 
 Rules are tried top to bottom and the first match wins. `connector` is checked first, so
-"head-tail connector" isn't labelled `tail`. RNA genes skip these rules (§4.2).
+"head-tail connector" is caught neither by the broad `head` pattern nor by `tail`; tests lock
+this order in. RNA genes skip these rules (§4.2). Groups are non-capturing (`(?:...)`) because
+pandas warns on capture groups in `str.contains`.
+
+The table extends the original draft with `amidase`, `head`, `topoisomerase`,
+`methyltransferase`, `replication`, `ssDNA`, `activator`, `anti.?terminat` and `transcription`
+(`prohead` and `anti-sigma` were dropped as already covered). Measured on the demo genomes,
+products left in `other` fell from 25 to 16 (lambda, 73 CDS), 10 to 5 (T7, 60) and 59 to 40
+(T4, 278). Known debatable case: "inhibitor of host transcription" lands in transcription
+regulation rather than host takeover.
 
 ### 8.2 Gene calling
 
