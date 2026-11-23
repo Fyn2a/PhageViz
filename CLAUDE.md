@@ -24,8 +24,9 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements-dev.txt     # runtime pins + pytest/ruff; installs src/ in editable mode
 NCBI_EMAIL=you@example.com python scripts/fetch_demo.py   # one-off: download demo genomes
 streamlit run app.py                     # run the app (http://localhost:8501)
-pytest -q                                # tests, network tests skipped
-pytest -m network                        # live NCBI tests (needs secrets)
+pytest -q                                # fast tests (~20 s): skips network and slow AppTest tests
+pytest -q -m "not network"               # everything offline, incl. slow AppTest tests (~35 s)
+pytest -m network                        # live NCBI tests (needs NCBI_EMAIL env var)
 pytest --cov=src --cov-report=term-missing
 ruff check . && ruff format .            # lint and format
 ```
@@ -76,7 +77,9 @@ Off-by-one errors are the most likely bug in this project. Add a test with a kno
 - Email and API key come from `st.secrets["ncbi"]`, passed into `ncbi.configure()` from `app.py`. Never hardcode them, never print or log them.
 - Always call `summarize()` and check length before `fetch_genbank()`.
 - `efetch` uses `db="nuccore"`, `rettype="gbwithparts"`, `retmode="text"`.
-- Cache raw GenBank text, not parsed objects.
+- Cache raw GenBank text (24 h TTL), so NCBI isn't asked again. The parsed `LoadResult` may be
+  cached in a second layer keyed on that text (as uploads are), never on the accession alone, so a
+  parser change can't serve stale parsed data for an accession.
 - Unit tests mock `Entrez` with `monkeypatch` and saved responses in `tests/data/`. Live calls only in tests marked `@pytest.mark.network`.
 
 ## Code style
@@ -95,7 +98,8 @@ Off-by-one errors are the most likely bug in this project. Add a test with a kno
 - Rotation must pass the round-trip invariant (SPEC §8.5).
 - `streamlit.testing.v1.AppTest` smoke test: app loads the demo without exceptions.
 - Target ≥ 80% coverage on `src/`.
-- Run `pytest -q` before saying a task is done, and report the result.
+- Run `pytest -q -m "not network"` (includes the `slow` AppTest tests) before saying a task is
+  done or committing, and report the result. Plain `pytest -q` is for quick feedback only.
 
 ## Workflow
 

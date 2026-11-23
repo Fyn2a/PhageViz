@@ -34,5 +34,9 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]  # so tests can import app.py helpers
-addopts = "-m 'not network'"
-markers = ["network: live calls to NCBI (opt-in with -m network)"]
+# Default run skips live NCBI calls and slow app tests. Everything offline: -m "not network".
+addopts = "-m 'not network and not slow'"
+markers = [
+    "network: live calls to NCBI (opt-in with -m network; needs NCBI_EMAIL)",
+    "slow: full-page AppTest runs (run with -m \"not network\" before committing)",
+]
