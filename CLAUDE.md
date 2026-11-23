@@ -64,7 +64,7 @@ tests/              → mirrors src/ ; fixtures in tests/data/
 
 Off-by-one errors are the most likely bug in this project. Add a test with a known gene coordinate whenever you touch parsing or rotation (lambda gene `A`: 711–2636, + strand; lambda genome length 48,502 bp).
 
-**Features DataFrame** must match the schema in SPEC §4.2 exactly (column names, dtypes, defaults). Use `models.validate_features(df)` after every parser.
+**Features DataFrame** must match the schema in SPEC §4.2 exactly (column names, dtypes, defaults). Build frames with `models.features_from_rows()`; `GenomeRecord` runs `validate_features` automatically on creation (SPEC §4.5), so an invalid record can't exist.
 
 **Categories** are the 10 PHROG categories, spelled exactly as in SPEC §4.3. Priority: Pharokka `function` → PHROG lookup → keyword rules. Always set `category_source`.
 

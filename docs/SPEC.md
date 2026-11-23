@@ -160,6 +160,22 @@ so `length = end - start + 1` and sorting by `start` work without special cases.
 - Slicing a wrapped feature: `seq[start - 1 :] + seq[: end - L]`.
 - No module stores `start > end`, including `transforms.py`.
 
+### 4.5 Validation
+
+`GenomeRecord` is a frozen dataclass (`eq=False`, since `==` on a DataFrame field is ambiguous)
+that validates itself in `__post_init__` and raises `errors.InvalidRecord` on any violation:
+
+- `source`, `annotation_origin` and `topology` are one of their allowed values
+- `sequence` is non-empty and matches `[ACGTN]+` (parsers upper-case and replace other IUPAC codes
+  before building the record, so they can report how many were replaced)
+- `0 ≤ rotation_offset < length`
+- `validate_features(features, length)` passes (§4.2 dtypes and nulls, unique `id`, strand,
+  `start ≤ end`, §4.4 bounds, RNA-gene rules, no trailing `*`, `length_aa` consistent with `aa`)
+- linear records have no `wraps_origin` rows
+
+Size limits (§6.5) are input policy and are enforced by `parsers.load`, not by the model.
+Transforms return new records, so every record in the app has passed these checks.
+
 ## 5. Module interfaces
 
 ```python
