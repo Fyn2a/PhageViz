@@ -2,12 +2,13 @@
 
 **Interactive bacteriophage genome annotation viewer, built with Streamlit.**
 
-Load a phage genome and see it as an interactive map coloured by gene function. Click any gene to
-see its coordinates, category and protein sequence, or search the gene table.
+Load a phage genome from a file or straight from NCBI and see it as an interactive map coloured
+by gene function. Click any gene to see its coordinates, category and protein sequence, or search
+the gene table.
 
-> **Status: in development, milestone 1 of 5 complete.** The core viewer works today (demo
-> genomes and GenBank upload). NCBI fetch, analysis tabs, more input formats and exports are
-> planned; see [Roadmap](#roadmap) for what's done and what isn't.
+> **Status: in development, milestone 2 of 5 complete.** The core viewer and NCBI fetch/search
+> work today. Analysis tabs, more input formats and exports are planned; see
+> [Roadmap](#roadmap) for what's done and what isn't.
 
 ![PhageViz showing phage lambda, with gene A selected](docs/screenshot.png)
 
@@ -24,7 +25,7 @@ protein sequence.*
 | Milestone | Scope | Status |
 |---|---|---|
 | **M1: Core viewer** | Data model, GenBank parser, demo genomes, genome map, gene table, click-to-inspect | **Done** |
-| **M2: NCBI** | Fetch by accession, search by name, caching, error handling, secrets | In progress |
+| **M2: NCBI** | Fetch by accession, search by name, caching, error handling, secrets | **Done** |
 | **M3: Analysis** | GC content and GC skew tracks, Summary tab, hallmark-gene check, category filter | Planned |
 | **M4: Raw input and export** | FASTA upload with gene prediction, GFF3 upload, CSV / FASTA / SVG / PNG downloads | Planned |
 | **M5: Polish and ship** | Genome rotation, GenBank export, CI, Docker, public deployment | Planned |
@@ -36,8 +37,9 @@ protein sequence.*
 - [x] Upload a GenBank file (`.gb`, `.gbk`, `.gbff`), optionally gzipped, with several records per file
 - [x] Pharokka GenBank output: PHROG categories read from the `function` qualifier
 - [x] Clear error messages for unreadable, empty or unsupported files
-- [ ] Fetch from NCBI by accession, e.g. `NC_001604` (M2)
-- [ ] Search NCBI by phage name (M2)
+- [x] Fetch from NCBI by accession, e.g. `NC_001604` (size checked before downloading)
+- [x] Search NCBI by phage name, with RefSeq reference genomes listed first
+- [x] Clear messages for unknown or protein accessions, oversized records, and NCBI outages
 - [ ] Upload FASTA and predict genes with `pyrodigal` (M4)
 - [ ] Upload GFF3 with an embedded sequence (M4)
 
@@ -77,16 +79,30 @@ streamlit run app.py
 
 The app opens at `http://localhost:8501` with phage lambda loaded.
 
-NCBI access will need an email address in `.streamlit/secrets.toml`; setup instructions arrive
-with milestone 2.
+### NCBI access (optional)
+
+NCBI asks every user of its E-utilities for an email address. To enable the **NCBI** source,
+create `.streamlit/secrets.toml`:
+
+```toml
+[ncbi]
+email = "you@example.com"
+api_key = ""   # optional: raises the limit from 3 to 10 requests per second
+```
+
+A free API key is available in your NCBI account settings. **Never commit `secrets.toml`**; it is
+already in `.gitignore`. Without it the app still runs, and the NCBI option shows these
+instructions instead.
 
 ## Usage
 
-1. Choose **Demo** or **Upload** in the sidebar.
-2. If an uploaded file holds more than one record, pick one.
-3. **Map** tab: hover over a gene for a summary, click it for full details and its protein
+1. Choose **Demo**, **Upload** or **NCBI** in the sidebar.
+2. For NCBI, type an accession (`NC_001604`) and click **Fetch**, or type a name
+   (`Escherichia phage T7`), click **Search**, pick a result and click **Fetch**.
+3. If an uploaded file holds more than one record, pick one.
+4. **Map** tab: hover over a gene for a summary, click it for full details and its protein
    sequence (with a copy button).
-4. **Table** tab: search by product name or locus tag.
+5. **Table** tab: search by product name or locus tag.
 
 ---
 
@@ -105,9 +121,14 @@ Things this project gets right that are easy to get wrong:
 - **Safe display of user data.** Product names and record titles are escaped before they reach
   Markdown or chart tooltips; unexpected errors show a generic message and are logged without
   user data.
-- **Tests.** 243 tests at the end of M1 with 100% line coverage of `src/`, checked against the
-  real lambda, T7 and T4 records. Key code was also mutation-tested (deliberately broken to make
-  sure a test fails).
+- **NCBI done carefully.** The record size is checked before downloading, so a bacterial
+  chromosome is refused in one small request. Searches list RefSeq reference genomes first
+  (NCBI's own order buried the T7 reference genome). Requests time out after 30 s instead of
+  hanging, failed fetches aren't retried on every page refresh, and results are cached.
+- **Tests.** 343 offline tests at the end of M2 with 100% line coverage of `src/`, checked
+  against the real lambda, T7 and T4 records and against real NCBI replies (recorded once, then
+  replayed offline). Key code was also mutation-tested (deliberately broken to make sure a test
+  fails).
 
 Design decisions are recorded in [docs/SPEC.md](docs/SPEC.md); requirements are in
 [docs/PRD.md](docs/PRD.md).
@@ -120,7 +141,7 @@ Design decisions are recorded in [docs/SPEC.md](docs/SPEC.md); requirements are 
 |---|---|---|
 | Annotated genome | GenBank (`.gb`, `.gbk`, `.gbff`), optionally gzipped | Supported |
 | Pharokka output | GenBank with `phrog` / `function` qualifiers | Supported |
-| NCBI accession or name | RefSeq (`NC_001416`) or GenBank (`J02459`) | M2 |
+| NCBI accession or name | RefSeq (`NC_001416`) or GenBank (`J02459`), or a phage name | Supported |
 | Raw genome | FASTA (`.fa`, `.fasta`, `.fna`) | M4 |
 | GFF3 | With an embedded `##FASTA` section | M4 |
 
@@ -137,10 +158,13 @@ phageviz/
 ├── requirements-dev.txt    # + pytest, pytest-cov, ruff
 ├── .streamlit/config.toml  # theme, upload limit, no tracebacks in the browser
 ├── data/demo/              # lambda, T7, T4 GenBank files (RefSeq)
-├── scripts/fetch_demo.py   # one-off download of the demo genomes
+├── scripts/
+│   ├── fetch_demo.py              # one-off download of the demo genomes
+│   └── capture_ncbi_fixtures.py   # records real NCBI replies for offline tests
 ├── src/phageviz/
 │   ├── models.py           # GenomeRecord and the features schema
 │   ├── parsers.py          # GenBank parsing (GFF3 and FASTA in M4)
+│   ├── ncbi.py             # NCBI summary, search and fetch via Bio.Entrez
 │   ├── annotation.py       # functional categories (hallmarks in M3)
 │   ├── plots.py            # Plotly genome map
 │   └── errors.py           # user-facing error types
@@ -148,14 +172,16 @@ phageviz/
 └── docs/                   # PRD.md, SPEC.md, screenshot
 ```
 
-Planned modules: `ncbi.py` (M2), `metrics.py` (M3), `gene_calling.py`, `exporters.py` (M4),
+Planned modules: `metrics.py` (M3), `gene_calling.py`, `exporters.py` (M4),
 `transforms.py` (M5).
 
 ## Testing
 
 ```bash
 pip install -r requirements-dev.txt
-pytest -q                                   # all tests
+pytest -q                                   # fast tests (~20 s)
+pytest -q -m "not network"                  # all offline tests, incl. full-page app tests
+NCBI_EMAIL=you@example.com pytest -m network   # live NCBI checks (optional)
 pytest --cov=src --cov-report=term-missing  # with coverage
 ruff check . && ruff format --check .       # lint
 ```
@@ -166,9 +192,11 @@ ruff check . && ruff format --check .       # lint
   [Pharokka](https://github.com/gbouras13/pharokka) and upload its GenBank output.
 - GenBank files without annotated genes can't be shown until gene prediction arrives (M4).
 - Genetic code 11 is used by default.
+- NCBI fetch and search depend on NCBI's availability and rate limits.
 
 ## Data sources and credits
 
+- **NCBI Nucleotide** via E-utilities and Biopython `Bio.Entrez`
 - **NCBI RefSeq** records for the demo genomes (lambda NC_001416.1, T7 NC_001604.1, T4 NC_000866.4)
 - **PHROGs** functional categories (Terzian et al., 2021, *NAR Genomics and Bioinformatics*)
 - **Biopython** (Cock et al., 2009, *Bioinformatics*)
