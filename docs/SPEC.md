@@ -452,14 +452,29 @@ The summary check costs one small request and avoids downloading a whole bacteri
 - Biopython's `Entrez` module already spaces requests to 3/s without a key and 10/s with one. No extra throttle is needed for a single user.
 - In `app.py`:
   ```python
-  @st.cache_data(ttl=86_400, show_spinner="Fetching from NCBI…")
-  def cached_fetch(accession: str) -> str: ...
+  @st.cache_resource
+  def configure_ncbi(email, api_key) -> None: ...          # once per process
 
   @st.cache_data(ttl=3_600)
   def cached_search(term: str) -> list[NcbiSummary]: ...
+
+  @st.cache_data(ttl=3_600)
+  def cached_summary(accession: str) -> NcbiSummary: ...   # normalised accession
+
+  @st.cache_data(ttl=86_400, show_spinner="Fetching from NCBI...")
+  def cached_fetch(accession_version: str) -> str: ...     # raw GenBank text
+
+  @st.cache_data(max_entries=8)
+  def parse_ncbi(text: str) -> LoadResult: ...             # keyed on the text itself
   ```
-- The cache key is the normalised accession, so `nc_001416` and `NC_001416` share an entry. An unversioned accession is cached under the version NCBI returns.
-- Raw GenBank text is cached, not the parsed record, so the parser can change without invalidating the cache.
+- The summary cache key is the normalised accession, so `nc_001416` and `NC_001416` share an
+  entry. The raw text is cached under the version NCBI returns (`summary.accession`).
+- Raw GenBank text is cached for 24 h so NCBI isn't asked again. The parsed `LoadResult` is
+  cached in a second layer keyed on that text (as uploads are), never on the accession, so a
+  parser change can't serve stale parsed data; without it every click on the map would re-parse
+  the record (~0.2 s for T4, ~1 s for 1 Mb).
+- Streamlit doesn't cache exceptions, so when summarize/check/fetch fails, `app.py` removes
+  `ncbi_accession` from session state; otherwise every rerun would repeat the failing request.
 
 ### 7.6 Errors
 
@@ -642,13 +657,16 @@ Built with Biopython `SeqRecord` and `SeqFeature`. Each CDS has `locus_tag`, `pr
 | Item | Mechanism | Key |
 |---|---|---|
 | Parsed records from upload | `st.cache_data` | file bytes hash |
-| NCBI fetch / search | `st.cache_data` with TTL | normalised accession / term |
+| NCBI search / summary / fetch | `st.cache_data` with TTL (1 h / 1 h / 24 h) | term / normalised accession / versioned accession |
+| Parsed NCBI record | `st.cache_data` | raw GenBank text |
+| NCBI configuration | `st.cache_resource` | email, api key |
 | PHROG lookup table | `st.cache_resource` | none (loaded once) |
 | Demo records | `st.cache_data` | demo name |
 | GC windows | `st.cache_data` | `(record_id, rotation_offset, window)` |
 | Selected record index | `st.session_state["record_idx"]` | — |
 | Selected gene | `st.session_state["gene_id"]` from `plotly_chart` `on_select` | — |
 | NCBI search results | `st.session_state["ncbi_results"]` | — |
+| NCBI record to show | `st.session_state["ncbi_accession"]` (set by Fetch, cleared on error) | — |
 | Rotation start gene | `st.session_state["start_gene"]` | — |
 
 When a new genome loads, `gene_id` and `start_gene` are cleared so stale selections don't carry over.
@@ -672,6 +690,14 @@ page runs only under `if __name__ == "__main__"` (Streamlit and `AppTest` both r
 - Table tab: one search box matching product or ID, literal and case-insensitive
   (`regex=False`, so input like `(` can't break it); rows sorted by start, strand as `+`/`−`.
 - A caption labels keyword categories as approximate and recommends Pharokka.
+- NCBI (M2): without a usable `[ncbi]` secrets section (`read_ncbi_secrets`; a missing file
+  raises a `FileNotFoundError` subclass) the main area shows setup instructions and nothing
+  is called. Otherwise the sidebar has a text box, **Search** and **Fetch**. Search stores
+  results in `ncbi_results` and shows a picker labelled `accession · RefSeq · length · title`.
+  Fetch loads the typed text if it is an accession, else the picked result; a name with no
+  search raises `InvalidAccession` (`fetch_target`). Then summary → `check_length` → raw text
+  → parsed record, all cached. A record whose title lacks "phage"/"virus" gets the §7.7
+  warning. Every message from `src/` is shown through `md_escape` (§7.6).
 
 ## 11. Edge cases
 

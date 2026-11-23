@@ -9,7 +9,8 @@ import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 import app
-from phageviz import plots
+from phageviz import ncbi, plots
+from phageviz.errors import AccessionNotFound, NoResults
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = str(ROOT / "app.py")
@@ -23,6 +24,7 @@ pytestmark = pytest.mark.slow
 @pytest.fixture(autouse=True)
 def clear_cache() -> None:
     st.cache_data.clear()
+    st.cache_resource.clear()
 
 
 def run_app() -> AppTest:
@@ -71,7 +73,8 @@ def test_switching_demo_genome(label: str, word: str) -> None:
 def test_t4_demo_shows_parser_warning() -> None:
     at = run_app()
     at.sidebar.selectbox(key="demo").set_value("Phage T4 (NC_000866)").run()
-    assert "ambiguous base(s) were replaced with N" in at.warning[0].value
+    # Messages are Markdown-escaped before display, so "(s)" arrives as "\(s\)".
+    assert "ambiguous base\\(s\\) were replaced with N" in at.warning[0].value
 
 
 def test_selected_gene_shows_detail_panel() -> None:
@@ -149,3 +152,165 @@ def test_unexpected_error_is_generic_and_not_leaked(monkeypatch, caplog) -> None
     assert "Unexpected RuntimeError" in caplog.text
     assert "app.py:" in caplog.text and "in map_tab" in caplog.text  # code locations kept
     assert secret not in caplog.text
+
+
+# --- NCBI (network functions replaced; no real requests) ------------------------------
+
+
+LAMBDA_TEXT = (ROOT / "data" / "demo" / "lambda.gbk").read_text()
+LAMBDA = ncbi.NcbiSummary(
+    "NC_001416.1", "Enterobacteria phage lambda, complete genome", 48_502, "1"
+)
+T7 = ncbi.NcbiSummary("NC_001604.1", "Escherichia phage T7, complete genome", 39_937, "2")
+OTHER = ncbi.NcbiSummary(
+    "PX872939.1", "Escherichia phage T7 isolate X, complete genome", 39_048, "3"
+)
+
+
+class FakeNcbi:
+    """Stands in for phageviz.ncbi's network functions and records every call."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str]] = []
+        self.summary = LAMBDA
+        self.results = [T7, OTHER]
+        self.text = LAMBDA_TEXT
+        self.summary_error: Exception | None = None
+        self.search_error: Exception | None = None
+
+    def configure(self, email: str, api_key: str | None = None) -> None:
+        self.calls.append(("configure", email))
+
+    def summarize(self, accession: str) -> ncbi.NcbiSummary:
+        self.calls.append(("summarize", accession))
+        if self.summary_error:
+            raise self.summary_error
+        return self.summary
+
+    def search(self, term: str, retmax: int = 20) -> list[ncbi.NcbiSummary]:
+        self.calls.append(("search", term))
+        if self.search_error:
+            raise self.search_error
+        return self.results
+
+    def fetch_genbank(self, accession: str) -> str:
+        self.calls.append(("fetch", accession))
+        return self.text
+
+    def count(self, name: str) -> int:
+        return sum(1 for call, _ in self.calls if call == name)
+
+
+@pytest.fixture
+def fake(monkeypatch: pytest.MonkeyPatch) -> FakeNcbi:
+    fake = FakeNcbi()
+    for name in ("configure", "summarize", "search", "fetch_genbank"):
+        monkeypatch.setattr(ncbi, name, getattr(fake, name))
+    return fake
+
+
+def ncbi_app(secrets: dict | None = None) -> AppTest:
+    at = AppTest.from_file(APP, default_timeout=TIMEOUT)
+    if secrets is not None:
+        at.secrets["ncbi"] = secrets
+    at.run()
+    at.sidebar.radio(key="source").set_value("NCBI").run()
+    return at
+
+
+def type_and_click(at: AppTest, text: str, button: str) -> AppTest:
+    at.sidebar.text_input(key="ncbi_query").input(text)
+    at.sidebar.button(key=button).click().run()
+    return at
+
+
+SECRETS = {"email": "tester@example.org", "api_key": ""}
+
+
+def test_ncbi_without_secrets_shows_setup_message(fake: FakeNcbi) -> None:
+    at = ncbi_app(secrets=None)
+    assert not at.exception and not at.error
+    assert "secrets.toml" in at.info[0].value
+    assert fake.calls == []
+
+
+def test_ncbi_prompt_before_any_fetch(fake: FakeNcbi) -> None:
+    at = ncbi_app(SECRETS)
+    assert "click **Fetch**" in at.info[0].value
+    assert fake.calls == [("configure", "tester@example.org")]
+
+
+def test_fetch_by_accession_loads_record_and_reruns_use_cache(fake: FakeNcbi) -> None:
+    at = type_and_click(ncbi_app(SECRETS), "  nc_001416 ", "ncbi_fetch")
+    assert not at.exception and not at.error
+    assert at.subheader[0].value == "Enterobacteria phage lambda, complete genome"
+    assert ("summarize", "NC_001416") in fake.calls
+    assert ("fetch", "NC_001416.1") in fake.calls  # the versioned accession from the summary
+    assert not at.warning  # phage title: no non-phage warning
+
+    at.text_input(key="table_query").input("terminase").run()  # an unrelated rerun
+    assert (fake.count("summarize"), fake.count("fetch")) == (1, 1)
+
+
+def test_search_then_pick_and_fetch(fake: FakeNcbi) -> None:
+    at = type_and_click(ncbi_app(SECRETS), "Escherichia phage T7", "ncbi_search")
+    picker = at.sidebar.selectbox(key="ncbi_pick")
+    assert picker.options == [
+        "NC_001604.1 · RefSeq · 39,937 bp · Escherichia phage T7, complete genome",
+        "PX872939.1 · 39,048 bp · Escherichia phage T7 isolate X, complete genome",
+    ]
+    picker.set_value(1).run()
+    at.sidebar.button(key="ncbi_fetch").click().run()
+    assert ("search", "Escherichia phage T7") in fake.calls
+    assert ("summarize", "PX872939.1") in fake.calls
+
+
+def test_typed_accession_wins_over_picked_result(fake: FakeNcbi) -> None:
+    at = type_and_click(ncbi_app(SECRETS), "phage T7", "ncbi_search")
+    type_and_click(at, "NC_001416", "ncbi_fetch")
+    assert ("summarize", "NC_001416") in fake.calls
+
+
+def test_fetch_with_name_and_no_search_explains(fake: FakeNcbi) -> None:
+    at = type_and_click(ncbi_app(SECRETS), "phage T7", "ncbi_fetch")
+    assert "doesn't look like an accession" in at.error[0].value
+    assert fake.count("summarize") == 0
+
+
+def test_oversized_record_is_refused_before_download(fake: FakeNcbi) -> None:
+    fake.summary = ncbi.NcbiSummary("NC_000913.3", "Escherichia coli K-12", 4_641_652, "9")
+    at = type_and_click(ncbi_app(SECRETS), "NC_000913", "ncbi_fetch")
+    assert "4,641,652 bp" in at.error[0].value
+    assert fake.count("fetch") == 0
+    assert "ncbi_accession" not in at.session_state
+
+
+def test_failed_fetch_is_not_retried_on_every_rerun(fake: FakeNcbi) -> None:
+    fake.summary_error = AccessionNotFound("NCBI has no nucleotide record for 'NC_999999999'.")
+    at = type_and_click(ncbi_app(SECRETS), "NC_999999999", "ncbi_fetch")
+    assert "NCBI has no nucleotide record" in at.error[0].value
+    at.run()  # e.g. any widget interaction
+    assert fake.count("summarize") == 1
+    assert "click **Fetch**" in at.info[0].value
+
+
+def test_search_without_results_shows_message(fake: FakeNcbi) -> None:
+    fake.search_error = NoResults("No complete genomes matched 'zzz'. Try a broader name.")
+    at = type_and_click(ncbi_app(SECRETS), "zzz", "ncbi_search")
+    assert "No complete genomes matched" in at.error[0].value
+
+
+def test_non_phage_record_gets_warning(fake: FakeNcbi) -> None:
+    fake.text = LAMBDA_TEXT.replace(
+        "DEFINITION  Enterobacteria phage lambda, complete genome.",
+        "DEFINITION  Escherichia coli test record.",
+    )
+    at = type_and_click(ncbi_app(SECRETS), "NC_001416", "ncbi_fetch")
+    assert at.subheader[0].value.startswith("Escherichia coli test record")
+    assert app.NON_PHAGE_WARNING in [w.value for w in at.warning]
+
+
+def test_error_messages_are_markdown_escaped(fake: FakeNcbi) -> None:
+    fake.summary_error = AccessionNotFound("bad **bold** [link](http://x)")
+    at = type_and_click(ncbi_app(SECRETS), "NC_001416", "ncbi_fetch")
+    assert r"\*\*bold\*\* \[link\]\(http://x\)" in at.error[0].value

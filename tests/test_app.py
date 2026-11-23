@@ -3,7 +3,9 @@ from __future__ import annotations
 import pytest
 
 import app
+from phageviz.errors import InvalidAccession
 from phageviz.models import GenomeRecord, features_from_rows
+from phageviz.ncbi import NcbiSummary
 
 # --- helpers
 
@@ -98,3 +100,57 @@ def test_app_module_imports_without_running_page() -> None:
     assert isinstance(app.DEMOS, dict) and all(
         (app.DEMO_DIR / f).exists() for f in app.DEMOS.values()
     )
+
+
+class MissingSecrets(dict):
+    """Like st.secrets without a secrets file: any lookup raises a FileNotFoundError subclass."""
+
+    def __getitem__(self, key):
+        raise FileNotFoundError("no secrets file")
+
+
+@pytest.mark.parametrize(
+    ("secrets", "expected"),
+    [
+        ({"ncbi": {"email": " me@example.org ", "api_key": " k "}}, ("me@example.org", "k")),
+        ({"ncbi": {"email": "me@example.org"}}, ("me@example.org", None)),
+        ({"ncbi": {"email": "me@example.org", "api_key": ""}}, ("me@example.org", None)),
+        ({"ncbi": {"email": "   "}}, None),
+        ({"ncbi": {}}, None),
+        ({"other": {}}, None),
+        ({"ncbi": "not a table"}, None),
+        (MissingSecrets(), None),
+    ],
+)
+def test_read_ncbi_secrets(secrets, expected) -> None:
+    assert app.read_ncbi_secrets(secrets) == expected
+
+
+def test_result_label_marks_refseq_and_shortens_titles() -> None:
+    refseq = NcbiSummary("NC_001604.1", "Escherichia phage T7, complete genome", 39_937, "1")
+    long = NcbiSummary("PX1.1", "x" * 100, 1_000, "2")
+    assert app.result_label(refseq) == (
+        "NC_001604.1 · RefSeq · 39,937 bp · Escherichia phage T7, complete genome"
+    )
+    label = app.result_label(long)
+    assert label.endswith("x" * 69 + "\u2026") and "RefSeq" not in label
+
+
+@pytest.mark.parametrize(
+    ("query", "picked", "expected"),
+    [
+        (" nc_001416 ", None, "NC_001416"),
+        ("NC_001416", "PX1.1", "NC_001416"),  # a typed accession wins
+        ("phage T7", "PX1.1", "PX1.1"),
+        ("", "PX1.1", "PX1.1"),
+    ],
+)
+def test_fetch_target(query: str, picked: str | None, expected: str) -> None:
+    summary = NcbiSummary(picked, "t", 1_000, "1") if picked else None
+    assert app.fetch_target(query, summary) == expected
+
+
+@pytest.mark.parametrize("query", ["phage T7", ""])
+def test_fetch_target_without_accession_or_pick_raises(query: str) -> None:
+    with pytest.raises(InvalidAccession):
+        app.fetch_target(query, None)

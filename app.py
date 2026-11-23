@@ -16,9 +16,10 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from phageviz import parsers, plots
+from phageviz import ncbi, parsers, plots
 from phageviz.errors import PhageVizError
 from phageviz.models import GenomeRecord, feature_parts
+from phageviz.ncbi import NcbiSummary
 
 DEMO_DIR = Path(__file__).resolve().parent / "data" / "demo"
 DEMOS: dict[str, str] = {
@@ -43,6 +44,16 @@ KEYWORD_NOTE = (
     "Categories come from keyword rules on product names and are approximate. "
     "For PHROG-based categories, annotate the genome with Pharokka and upload its GenBank file."
 )
+NCBI_SETUP_MESSAGE = (
+    "NCBI access isn't set up. Create `.streamlit/secrets.toml` with an `[ncbi]` section "
+    "containing your `email` (and optionally an `api_key`), then restart the app. "
+    "See the README. Demo and Upload work without it."
+)
+NCBI_PROMPT = (
+    "Type an accession such as NC\\_001604 and click **Fetch**, "
+    "or a phage name and click **Search**."
+)
+NON_PHAGE_WARNING = "This record may not be a phage genome."
 
 log = logging.getLogger("phageviz")
 _MARKDOWN_SPECIAL = re.compile(r"([\\`*_{}\[\]()#+\-.!|<>~$])")
@@ -95,7 +106,66 @@ def wrap_protein(aa: str, width: int = PROTEIN_LINE_WIDTH) -> str:
     return "\n".join(aa[i : i + width] for i in range(0, len(aa), width))
 
 
+def read_ncbi_secrets(secrets: Mapping[str, Any]) -> tuple[str, str | None] | None:
+    """(email, api_key) from the ``[ncbi]`` secrets section, or None if it isn't usable.
+
+    ``st.secrets`` raises a ``FileNotFoundError`` subclass when there is no secrets file.
+    """
+    try:
+        section = secrets["ncbi"]
+        email = str(section.get("email") or "").strip()
+        api_key = str(section.get("api_key") or "").strip() or None
+    except (KeyError, FileNotFoundError, AttributeError, TypeError):
+        return None
+    return (email, api_key) if email else None
+
+
+def result_label(summary: NcbiSummary) -> str:
+    """One search result as shown in the picker."""
+    refseq = " · RefSeq" if summary.is_refseq else ""
+    title = summary.title if len(summary.title) <= 70 else summary.title[:69] + "…"
+    return f"{summary.accession}{refseq} · {summary.length:,} bp · {title}"
+
+
+def fetch_target(query: str, picked: NcbiSummary | None) -> str:
+    """The accession Fetch should load: typed text if it is an accession, else the picked result.
+
+    Raises:
+        InvalidAccession: The text isn't an accession and no search result is picked.
+    """
+    if ncbi.looks_like_accession(query) or picked is None:
+        return ncbi.validate_accession(query)
+    return picked.accession
+
+
 # --- cached loaders --------------------------------------------------------------
+
+
+@st.cache_resource
+def configure_ncbi(email: str, api_key: str | None) -> None:
+    ncbi.configure(email, api_key)
+
+
+@st.cache_data(ttl=3_600, show_spinner="Searching NCBI...")
+def cached_search(term: str) -> list[NcbiSummary]:
+    return ncbi.search(term)
+
+
+@st.cache_data(ttl=3_600, show_spinner="Checking the record at NCBI...")
+def cached_summary(accession: str) -> NcbiSummary:
+    return ncbi.summarize(accession)
+
+
+@st.cache_data(ttl=86_400, show_spinner="Fetching from NCBI...")
+def cached_fetch(accession_version: str) -> str:
+    # Raw text, keyed on the versioned accession NCBI resolved (SPEC 7.5).
+    return ncbi.fetch_genbank(accession_version)
+
+
+@st.cache_data(max_entries=8, show_spinner="Reading the record...")
+def parse_ncbi(text: str) -> parsers.LoadResult:
+    # Keyed on the text itself, so a parser change can't serve stale results for an accession.
+    return parsers.parse_genbank(text, "ncbi")
 
 
 @st.cache_data(show_spinner="Loading demo genome...")
@@ -114,10 +184,12 @@ def load_upload(data: bytes) -> parsers.LoadResult:
 def choose_input() -> parsers.LoadResult | None:
     """Sidebar input source. Returns None when there is nothing to show yet."""
     st.sidebar.header("Input")
-    source = st.sidebar.radio("Source", ["Demo", "Upload"], key="source", horizontal=True)
+    source = st.sidebar.radio("Source", ["Demo", "Upload", "NCBI"], key="source", horizontal=True)
     if source == "Demo":
         name = st.sidebar.selectbox("Demo genome", list(DEMOS), key="demo")
         return load_demo(DEMOS[name])
+    if source == "NCBI":
+        return choose_ncbi()
     upload = st.sidebar.file_uploader(
         "GenBank file",
         key="upload",
@@ -127,6 +199,52 @@ def choose_input() -> parsers.LoadResult | None:
         st.info("Upload an annotated GenBank file, or choose **Demo** to explore an example.")
         return None
     return load_upload(upload.getvalue())
+
+
+def choose_ncbi() -> parsers.LoadResult | None:
+    """NCBI search and fetch (SPEC 7.4). Returns None until a record has been fetched."""
+    settings = read_ncbi_secrets(st.secrets)
+    if settings is None:
+        st.info(NCBI_SETUP_MESSAGE)
+        return None
+    configure_ncbi(*settings)
+
+    query = st.sidebar.text_input(
+        "Accession or phage name", key="ncbi_query", placeholder="NC_001604 or phage T7"
+    )
+    search_col, fetch_col = st.sidebar.columns(2)
+    if search_col.button("Search", key="ncbi_search", width="stretch"):
+        st.session_state.pop("ncbi_results", None)
+        st.session_state["ncbi_results"] = cached_search(query.strip())
+
+    results: list[NcbiSummary] = st.session_state.get("ncbi_results") or []
+    picked = None
+    if results:
+        index = st.sidebar.selectbox(
+            "Search results",
+            range(len(results)),
+            format_func=lambda i: result_label(results[i]),
+            key="ncbi_pick",
+        )
+        picked = results[index]
+        st.sidebar.caption(f"{len(results)} complete genomes, RefSeq records first.")
+
+    if fetch_col.button("Fetch", key="ncbi_fetch", type="primary", width="stretch"):
+        st.session_state["ncbi_accession"] = fetch_target(query, picked)
+
+    accession = st.session_state.get("ncbi_accession")
+    if accession is None:
+        st.info(NCBI_PROMPT)
+        return None
+    try:
+        summary = cached_summary(accession)
+        ncbi.check_length(summary)
+        return parse_ncbi(cached_fetch(summary.accession))
+    except PhageVizError:
+        # Errors aren't cached, so forget the accession; otherwise every rerun would repeat
+        # the failing request.
+        st.session_state.pop("ncbi_accession", None)
+        raise
 
 
 def choose_record(result: parsers.LoadResult) -> GenomeRecord:
@@ -222,13 +340,15 @@ def page() -> None:
     try:
         result = choose_input()
     except PhageVizError as exc:
-        st.error(exc.message)
+        st.error(md_escape(exc.message))  # messages can contain user input and file data
         return
     if result is None:
         return
     for message in result.warnings:
-        st.warning(message)
+        st.warning(md_escape(message))
     record = choose_record(result)
+    if record.source == "ncbi" and not ncbi.looks_like_phage(record.description):
+        st.warning(NON_PHAGE_WARNING)
     genome_key = reset_selection_if_new(record)
     header(record)
     tab_map, tab_table = st.tabs(["Map", "Table"])
@@ -242,7 +362,7 @@ def main() -> None:
     try:
         page()
     except PhageVizError as exc:
-        st.error(exc.message)
+        st.error(md_escape(exc.message))
     except Exception as exc:
         # Log the error type and code locations only. Never the message or source lines: the
         # message may contain user data such as product names or sequences (SPEC 14).
