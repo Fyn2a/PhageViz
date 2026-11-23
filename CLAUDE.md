@@ -60,7 +60,7 @@ tests/              → mirrors src/ ; fixtures in tests/data/
 - Biopython `FeatureLocation` is 0-based half-open → `start + 1`, `end`
 - GFF3 and pyrodigal are already 1-based inclusive
 - Slicing: `seq[start - 1 : end]`
-- Origin-crossing features: set `wraps_origin=True`; don't store `start > end` outside `transforms.py`
+- Origin-crossing features (circular only): store unwrapped, `end = last base after origin + L`, `wraps_origin=True` (SPEC §4.4). Never store `start > end` anywhere. Use `models.feature_parts()` to get real parts.
 
 Off-by-one errors are the most likely bug in this project. Add a test with a known gene coordinate whenever you touch parsing or rotation (lambda gene `A`: 711–2636, + strand; lambda genome length 48,502 bp).
 

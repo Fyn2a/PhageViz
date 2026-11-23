@@ -94,18 +94,28 @@ class GenomeRecord:
 
 | Column | dtype | Nullable | Description |
 |---|---|---|---|
-| `id` | str | no | Locus tag, or `{record_id}_{n}` when missing. Unique within the record. |
-| `type` | category | no | `CDS`, `tRNA`, `tmRNA` |
-| `start` | int64 | no | **1-based, inclusive.** Always `start ≤ end`. |
-| `end` | int64 | no | 1-based, inclusive |
-| `strand` | int8 | no | `1` or `-1` |
-| `product` | str | no | Default `"hypothetical protein"` |
-| `category` | category | no | One of the 10 PHROG categories (§4.3) |
-| `category_source` | category | no | `phrog`, `keyword` |
-| `phrog` | str | yes | PHROG ID, e.g. `phrog_1` |
-| `aa` | str | yes | Protein sequence without the trailing `*`. Empty for RNA genes. |
-| `length_aa` | int64 | yes | `len(aa)` |
-| `wraps_origin` | bool | no | True if the feature crosses position L→1 (circular only) |
+| `id` | `string` | no | Locus tag, or `{record_id}_{n:04d}` when missing. Unique within the record. |
+| `type` | `category` (fixed: `CDS`, `tRNA`, `tmRNA`) | no | Feature type |
+| `start` | `int64` | no | **1-based, inclusive.** Always `1 ≤ start ≤ end`. |
+| `end` | `int64` | no | 1-based, inclusive. `end ≤ L`, except origin-crossing features (§4.4). |
+| `strand` | `int8` | no | `1` or `-1` |
+| `product` | `string` | no | Default `"hypothetical protein"` |
+| `category` | `category` (fixed: the 10 in §4.3, in that order) | no | Functional category |
+| `category_source` | `category` (fixed: `phrog`, `keyword`) | no | How `category` was assigned |
+| `phrog` | `string` | yes | PHROG ID, e.g. `phrog_1` |
+| `aa` | `string` | yes | Protein sequence without the trailing `*`. `<NA>` for RNA genes. |
+| `length_aa` | `Int64` (nullable integer) | yes | `len(aa)`; `<NA>` when `aa` is `<NA>` |
+| `wraps_origin` | `bool` | no | True if the feature crosses position L→1 (circular only) |
+
+**dtypes.** `string` is `pd.StringDtype()` and `Int64` is pandas' nullable integer; both behave the
+same on pandas 2.x and 3.x. Missing values are `pd.NA`, never `""` or `NaN`. numpy `int64` can't
+hold missing values, which is why `length_aa` is `Int64`. Categorical columns use fixed category
+lists so frames from different parsers concatenate and compare cleanly. Parsers build frames with
+`models.features_from_rows()`, which sets dtypes and defaults; `models.validate_features()` checks
+columns, dtypes and the invariants above.
+
+**RNA genes.** `tRNA` and `tmRNA` have no PHROG category. They are always `category="other"`,
+`category_source="keyword"`, `aa=<NA>`, `length_aa=<NA>`.
 
 ### 4.3 Functional categories (PHROG)
 
@@ -133,11 +143,34 @@ Each category has a fixed colour in `plots.CATEGORY_COLORS`, using a colour-blin
 | pyrodigal `Gene` | 1-based, inclusive (`begin`, `end`) | none |
 | Python string slicing | 0-based, half-open | `seq[start - 1 : end]` |
 
-Features that wrap the origin (Biopython `CompoundLocation` across the origin) are stored with `start > end` **only** inside `transforms.py`; elsewhere they are flagged `wraps_origin=True` and drawn as two bars.
+**Origin-crossing features** (circular genomes only, e.g. Biopython `join(48001..48502,1..300)` on
+a 48,502 bp genome) are stored **unwrapped**: `start` is the first base before the origin and `end`
+is the last base after the origin **plus L**, with `wraps_origin=True`.
+
+| Feature | `start` | `end` | `wraps_origin` |
+|---|---|---|---|
+| `join(48001..48502,1..300)`, L = 48,502 | 48001 | 48802 | True |
+
+Invariants for wrapped rows: `start ≤ L < end < start + L`. For all other rows `end ≤ L` and
+`wraps_origin=False`. Linear records never have wrapped rows. This keeps `start ≤ end` everywhere,
+so `length = end - start + 1` and sorting by `start` work without special cases.
+
+- Splitting into real parts (for drawing two bars or writing GenBank): `models.feature_parts(start,
+  end, L)` returns `[(start, L), (1, end - L)]` for wrapped rows, `[(start, end)]` otherwise.
+- Slicing a wrapped feature: `seq[start - 1 :] + seq[: end - L]`.
+- No module stores `start > end`, including `transforms.py`.
 
 ## 5. Module interfaces
 
 ```python
+# models.py
+CATEGORIES: tuple[str, ...]                                      # §4.3, in order
+FEATURE_COLUMNS: tuple[str, ...]                                 # §4.2, in order
+def empty_features() -> pd.DataFrame
+def features_from_rows(rows: list[dict]) -> pd.DataFrame          # fills defaults, sets dtypes
+def validate_features(df: pd.DataFrame, length: int | None = None) -> None   # raises on violation
+def feature_parts(start: int, end: int, length: int) -> list[tuple[int, int]]
+
 # parsers.py
 def detect_format(text: str) -> Literal["genbank", "gff3", "fasta"]
 def parse_genbank(text: str, source: str) -> list[GenomeRecord]
@@ -342,9 +375,9 @@ If the record title doesn't contain `phage` or `virus` (case-insensitive), show 
 
 | Category | Regex (case-insensitive) |
 |---|---|
+| connector | `head.tail\|connector\|neck\|adaptor` |
 | lysis | `holin\|endolysin\|lysozyme\|spanin\|lysis` |
 | head and packaging | `terminase\|portal\|capsid\|scaffold\|packag\|prohead` |
-| connector | `head.tail\|connector\|neck\|adaptor` |
 | tail | `tail\|fib(er\|re)\|baseplate\|sheath\|tape.measure` |
 | integration and excision | `integrase\|excisionase\|recombinase\|transposase` |
 | DNA, RNA and nucleotide metabolism | `polymerase\|helicase\|primase\|nuclease\|ligase\|reductase\|kinase` |
@@ -353,7 +386,8 @@ If the record title doesn't contain `phage` or `virus` (case-insensitive), show 
 | unknown function | `hypothetical\|unknown\|uncharacteri[sz]ed\|DUF` |
 | other | no match |
 
-`connector` is checked before `tail` and `head and packaging`, so "head-tail connector" isn't mislabelled.
+Rules are tried top to bottom and the first match wins. `connector` is checked first, so
+"head-tail connector" isn't labelled `tail`. RNA genes skip these rules (§4.2).
 
 ### 8.2 Gene calling
 
@@ -398,7 +432,14 @@ Integrase and repressor are shown as **informational**, not pass/fail. The tab s
 new_pos = ((old_pos - offset - 1) % L) + 1      # offset = new_start - 1
 ```
 
-Features whose new `start > end` are split in two parts for display and flagged `wraps_origin=True`. The sequence becomes `seq[offset:] + seq[:offset]`. Reverse-strand start genes are rotated to their `start` coordinate. **Invariant:** `rotate(rotate(r, k), L - k + 2)` returns the original coordinates (tested).
+`new_start` must be in `1..L`; `new_start = 1` returns the record unchanged. Each feature's real
+parts (`models.feature_parts`) are moved with the formula; if the moved feature now crosses the
+new origin it is stored unwrapped (`end + L`, `wraps_origin=True`, §4.4), and a feature that no
+longer crosses it becomes a normal row. The sequence becomes `seq[offset:] + seq[:offset]`.
+Reverse-strand start genes are rotated to their `start` coordinate. **Invariant:** for
+`2 ≤ k ≤ L`, `rotate(rotate(r, k), L - k + 2)` returns the original coordinates (tested). The
+`k = 1` case is excluded because `L - k + 2 = L + 1` is out of range; it is covered by the
+identity rule instead.
 
 ## 9. Output specifications
 
@@ -443,7 +484,7 @@ When a new genome loads, `gene_id` and `start_gene` are cleared so stale selecti
 
 | Case | Handling |
 |---|---|
-| CDS crossing the origin | `CompoundLocation`: use `parts`, set `wraps_origin`, draw two bars |
+| CDS crossing the origin | `CompoundLocation`: use `parts`, store unwrapped with `end > L` and `wraps_origin=True` (§4.4), draw two bars |
 | Joined CDS (ribosomal frameshift, e.g. lambda tail assembly gene) | Use outer bounds for the map, keep the `translation` qualifier as given |
 | Missing `locus_tag` | Generate `{record_id}_{n:04d}` |
 | Duplicate IDs | Add `_2`, `_3` suffix |
