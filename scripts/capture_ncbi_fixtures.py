@@ -24,7 +24,10 @@ from urllib.error import HTTPError
 from Bio import Entrez
 
 DEFAULT_OUT = Path(__file__).resolve().parents[1] / "tests" / "data" / "ncbi"
+# Must build the same queries as phageviz.ncbi.search (SPEC 7.2).
 SEARCH_SUFFIX = ' AND "complete genome"[Title] AND 1000:1000000[SLEN]'
+REFSEQ_FILTER = " AND refseq[filter]"
+RETMAX = 20
 
 
 class Capture(NamedTuple):
@@ -33,31 +36,21 @@ class Capture(NamedTuple):
     params: dict[str, Any]
 
 
+def esearch(name: str, term: str, refseq: bool = False) -> Capture:
+    query = f"({term}){SEARCH_SUFFIX}" + (REFSEQ_FILTER if refseq else "")
+    params = {"db": "nuccore", "term": query, "retmax": RETMAX, "idtype": "acc"}
+    return Capture(name, "esearch", params)
+
+
 CAPTURES: tuple[Capture, ...] = (
     Capture("esummary_lambda.xml", "esummary", {"db": "nuccore", "id": "NC_001416"}),
     Capture("esummary_missing.xml", "esummary", {"db": "nuccore", "id": "NC_999999999"}),
     Capture("esummary_protein.xml", "esummary", {"db": "nuccore", "id": "YP_009005129"}),
     Capture("esummary_large.xml", "esummary", {"db": "nuccore", "id": "NC_000913"}),
-    Capture(
-        "esearch_t7.xml",
-        "esearch",
-        {
-            "db": "nuccore",
-            "term": "Escherichia phage T7" + SEARCH_SUFFIX,
-            "retmax": 20,
-            "idtype": "acc",
-        },
-    ),
-    Capture(
-        "esearch_none.xml",
-        "esearch",
-        {
-            "db": "nuccore",
-            "term": "zzqxnotaphagezzqx" + SEARCH_SUFFIX,
-            "retmax": 20,
-            "idtype": "acc",
-        },
-    ),
+    esearch("esearch_t7_refseq.xml", "Escherichia phage T7", refseq=True),
+    esearch("esearch_t7.xml", "Escherichia phage T7"),
+    esearch("esearch_none_refseq.xml", "zzqxnotaphagezzqx", refseq=True),
+    esearch("esearch_none.xml", "zzqxnotaphagezzqx"),
 )
 
 
@@ -100,7 +93,10 @@ def main(argv: list[str] | None = None) -> int:
         _save(args.out, capture.name, body, status, capture.params, manifest)
 
     # The search test also needs the summaries of the accessions the search returned.
-    ids = search_ids((args.out / "esearch_t7.xml").read_bytes())
+    # RefSeq hits first, then the rest without duplicates, as phageviz.ncbi.search merges them.
+    ids = search_ids((args.out / "esearch_t7_refseq.xml").read_bytes())
+    ids += [i for i in search_ids((args.out / "esearch_t7.xml").read_bytes()) if i not in ids]
+    ids = ids[:RETMAX]
     if ids:
         params = {"db": "nuccore", "id": ",".join(ids)}
         status, body = fetch_raw(Entrez.esummary, params)

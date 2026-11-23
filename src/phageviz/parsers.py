@@ -216,7 +216,7 @@ def _genbank_record(seq_record: SeqRecord, source: Source) -> tuple[GenomeRecord
             "parts). Download the full GenBank record with the sequence included."
         ) from exc
     sequence, replaced = _clean_sequence(raw_sequence)
-    _check_length(record_id, len(sequence))
+    check_length(record_id, len(sequence))
     topology = seq_record.annotations.get("topology", "linear")
     if topology not in ("linear", "circular"):
         topology = "linear"
@@ -294,7 +294,17 @@ def _clean_sequence(raw: str) -> tuple[str, int]:
     return _NOT_ACGTN.subn("N", raw.upper())
 
 
-def _check_length(record_id: str, length: int) -> None:
+def check_length(record_id: str, length: int) -> None:
+    """Enforce the genome size limits (SPEC 6.5); shared by uploads and NCBI fetches.
+
+    Args:
+        record_id: Shown in the error message.
+        length: Genome length in bp. Both limits are inclusive.
+
+    Raises:
+        RecordTooLarge: Longer than ``MAX_GENOME_LENGTH``.
+        RecordTooShort: Shorter than ``MIN_GENOME_LENGTH``.
+    """
     if length > MAX_GENOME_LENGTH:
         raise RecordTooLarge(
             f"{record_id} is {length:,} bp. PhageViz handles genomes up to "

@@ -4,7 +4,16 @@
       "db": "nuccore",
       "idtype": "acc",
       "retmax": 20,
-      "term": "zzqxnotaphagezzqx AND \"complete genome\"[Title] AND 1000:1000000[SLEN]"
+      "term": "(zzqxnotaphagezzqx) AND \"complete genome\"[Title] AND 1000:1000000[SLEN]"
+    },
+    "status": 200
+  },
+  "esearch_none_refseq.xml": {
+    "params": {
+      "db": "nuccore",
+      "idtype": "acc",
+      "retmax": 20,
+      "term": "(zzqxnotaphagezzqx) AND \"complete genome\"[Title] AND 1000:1000000[SLEN] AND refseq[filter]"
     },
     "status": 200
   },
@@ -13,7 +22,16 @@
       "db": "nuccore",
       "idtype": "acc",
       "retmax": 20,
-      "term": "Escherichia phage T7 AND \"complete genome\"[Title] AND 1000:1000000[SLEN]"
+      "term": "(Escherichia phage T7) AND \"complete genome\"[Title] AND 1000:1000000[SLEN]"
+    },
+    "status": 200
+  },
+  "esearch_t7_refseq.xml": {
+    "params": {
+      "db": "nuccore",
+      "idtype": "acc",
+      "retmax": 20,
+      "term": "(Escherichia phage T7) AND \"complete genome\"[Title] AND 1000:1000000[SLEN] AND refseq[filter]"
     },
     "status": 200
   },
@@ -48,7 +66,7 @@
   "esummary_search.xml": {
     "params": {
       "db": "nuccore",
-      "id": "QB005184.1,QB005183.1,QB005182.1,QB005181.1,QB005180.1,QB005179.1,QB005178.1,PX872939.1,PX872938.1,PZ151113.1,PX223409.1,PX223408.1,PX866610.1,PV714130.1,PV287706.1,PV223883.1,PV223882.1,PV223881.1,PV223880.1,OR979722.1"
+      "id": "NC_048861.1,NC_001604.1,QB005184.1,QB005183.1,QB005182.1,QB005181.1,QB005180.1,QB005179.1,QB005178.1,PX872939.1,PX872938.1,PZ151113.1,PX223409.1,PX223408.1,PX866610.1,PV714130.1,PV287706.1,PV223883.1,PV223882.1,PV223881.1"
     },
     "status": 200
   }

@@ -61,7 +61,7 @@ def test_records_replies_errors_and_manifest_without_email(
     assert manifest["esummary_missing.xml"]["status"] == 400
     assert (tmp_path / "esummary_missing.xml").read_bytes() == b"<ERROR>bad id</ERROR>"
     assert manifest["esummary_lambda.xml"]["status"] == 200
-    assert requests[-1] == {"db": "nuccore", "id": "NC_001604.1,V01146.1"}
+    assert requests[-1] == {"db": "nuccore", "id": "NC_001604.1,V01146.1"}  # merged, no dups
     assert "esummary_search.xml" in manifest
     written = "".join(p.read_text(errors="replace") for p in tmp_path.iterdir())
     out = capsys.readouterr()

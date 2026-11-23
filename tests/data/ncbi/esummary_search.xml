@@ -2,6 +2,40 @@
 <!DOCTYPE eSummaryResult PUBLIC "-//NLM//DTD esummary v1 20041029//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20041029/esummary-v1.dtd">
 <eSummaryResult>
 <DocSum>
+	<Id>1859669280</Id>
+	<Item Name="Caption" Type="String">NC_048861</Item>
+	<Item Name="Title" Type="String">Proteus phage Privateer, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|1859669280|ref|NC_048861.1|[1859669280]</Item>
+	<Item Name="Gi" Type="Integer">1859669280</Item>
+	<Item Name="CreateDate" Type="String">2020/06/19</Item>
+	<Item Name="UpdateDate" Type="String">2023/01/11</Item>
+	<Item Name="Flags" Type="Integer">512</Item>
+	<Item Name="TaxId" Type="Integer">2712958</Item>
+	<Item Name="Length" Type="Integer">90710</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">NC_048861.1</Item>
+</DocSum>
+
+<DocSum>
+	<Id>9627425</Id>
+	<Item Name="Caption" Type="String">NC_001604</Item>
+	<Item Name="Title" Type="String">Enterobacteria phage T7, complete genome</Item>
+	<Item Name="Extra" Type="String">gi|9627425|ref|NC_001604.1||gnl|NCBI_GENOMES|10461[9627425]</Item>
+	<Item Name="Gi" Type="Integer">9627425</Item>
+	<Item Name="CreateDate" Type="String">1982/11/03</Item>
+	<Item Name="UpdateDate" Type="String">2023/01/07</Item>
+	<Item Name="Flags" Type="Integer">512</Item>
+	<Item Name="TaxId" Type="Integer">10760</Item>
+	<Item Name="Length" Type="Integer">39937</Item>
+	<Item Name="Status" Type="String">live</Item>
+	<Item Name="ReplacedBy" Type="String"></Item>
+	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
+	<Item Name="AccessionVersion" Type="String">NC_001604.1</Item>
+</DocSum>
+
+<DocSum>
 	<Id>3408458959</Id>
 	<Item Name="Caption" Type="String">QB005184</Item>
 	<Item Name="Title" Type="String">Escherichia phage T7 isolate T7evo-3, complete genome</Item>
@@ -305,40 +339,6 @@
 	<Item Name="ReplacedBy" Type="String"></Item>
 	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
 	<Item Name="AccessionVersion" Type="String">PV223881.1</Item>
-</DocSum>
-
-<DocSum>
-	<Id>2978485944</Id>
-	<Item Name="Caption" Type="String">PV223880</Item>
-	<Item Name="Title" Type="String">Mutant Escherichia phage T7 clone recombinant T7-B, complete genome</Item>
-	<Item Name="Extra" Type="String">gi|2978485944|gb|PV223880.1|[2978485944]</Item>
-	<Item Name="Gi" Type="Integer">2978485944</Item>
-	<Item Name="CreateDate" Type="String">2025/05/21</Item>
-	<Item Name="UpdateDate" Type="String">2025/05/21</Item>
-	<Item Name="Flags" Type="Integer"></Item>
-	<Item Name="TaxId" Type="Integer">10760</Item>
-	<Item Name="Length" Type="Integer">36016</Item>
-	<Item Name="Status" Type="String">live</Item>
-	<Item Name="ReplacedBy" Type="String"></Item>
-	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
-	<Item Name="AccessionVersion" Type="String">PV223880.1</Item>
-</DocSum>
-
-<DocSum>
-	<Id>2706108401</Id>
-	<Item Name="Caption" Type="String">OR979722</Item>
-	<Item Name="Title" Type="String">Escherichia phage ETEP21B, complete genome</Item>
-	<Item Name="Extra" Type="String">gi|2706108401|gb|OR979722.1|[2706108401]</Item>
-	<Item Name="Gi" Type="Integer">2706108401</Item>
-	<Item Name="CreateDate" Type="String">2024/06/25</Item>
-	<Item Name="UpdateDate" Type="String">2024/06/25</Item>
-	<Item Name="Flags" Type="Integer"></Item>
-	<Item Name="TaxId" Type="Integer">3117681</Item>
-	<Item Name="Length" Type="Integer">39424</Item>
-	<Item Name="Status" Type="String">live</Item>
-	<Item Name="ReplacedBy" Type="String"></Item>
-	<Item Name="Comment" Type="String"><![CDATA[  ]]></Item>
-	<Item Name="AccessionVersion" Type="String">OR979722.1</Item>
 </DocSum>
 
 </eSummaryResult>

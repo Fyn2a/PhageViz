@@ -33,3 +33,27 @@ class RecordTooLarge(PhageVizError):
 
 class RecordTooShort(PhageVizError):
     """A genome is shorter than the supported minimum (SPEC 6.5)."""
+
+
+class NcbiNotConfigured(PhageVizError):
+    """No email is configured for NCBI access (SPEC 7.1)."""
+
+
+class InvalidAccession(PhageVizError):
+    """Text in fetch mode doesn't match the accession pattern (SPEC 7.3)."""
+
+
+class AccessionNotFound(PhageVizError):
+    """NCBI has no nucleotide record for an accession."""
+
+
+class NcbiUnavailable(PhageVizError):
+    """NCBI didn't answer usefully: network error, timeout, 5xx or an unexpected reply."""
+
+
+class NcbiRateLimited(PhageVizError):
+    """NCBI kept answering HTTP 429 after retries."""
+
+
+class NoResults(PhageVizError):
+    """A search returned no complete genomes."""

@@ -202,10 +202,13 @@ def load(data: bytes, source: str) -> LoadResult
 
 # ncbi.py
 def configure(email: str, api_key: str | None) -> None
+def looks_like_accession(text: str) -> bool                      # fetch vs search in the UI
 def validate_accession(acc: str) -> str                          # normalised or raises
 def summarize(accession: str) -> NcbiSummary
-def search(term: str, retmax: int = 20) -> list[NcbiSummary]
+def check_length(summary: NcbiSummary) -> None                   # §6.5 limits, before fetch
+def search(term: str, retmax: int = 20) -> list[NcbiSummary]     # RefSeq first (§7.2)
 def fetch_genbank(accession: str) -> str                         # raw GenBank text
+def looks_like_phage(title: str) -> bool                         # §7.7
 
 # gene_calling.py
 def call_genes(record: GenomeRecord, table: int = 11) -> pd.DataFrame
@@ -361,9 +364,25 @@ Entrez.api_key = api_key or None
 Entrez.tool = "phageviz"
 Entrez.max_tries = 3
 Entrez.sleep_between_tries = 5
+socket.setdefaulttimeout(30)   # REQUEST_TIMEOUT_S
 ```
 
-If `email` is missing, the NCBI option shows a setup message and makes no calls.
+If `email` is missing, the NCBI option shows a setup message and makes no calls. `configure`
+raises `NcbiNotConfigured` for a blank email, and every network function checks that it ran, so
+a request is never sent without an email (Biopython would only warn).
+
+**Timeout.** Biopython calls `urlopen()` without a timeout, so a connection NCBI accepts but never
+answers would hang the app indefinitely. `configure` sets a 30 s process-wide default socket
+timeout; a stalled request then fails as `NcbiUnavailable`. Streamlit's server uses non-blocking
+sockets, so it isn't affected.
+
+**Process-wide settings.** Biopython keeps email, key and retry settings as module globals and
+rate-limits across the whole process. Every session uses the same secrets, so this is acceptable
+despite the "no global state in `src/`" rule; `configure` is the only place that sets them.
+
+**Retries** (Biopython's behaviour, read from its source): HTTP 5xx and 429 are retried
+immediately up to `max_tries`; network errors (`URLError`) wait `sleep_between_tries` between
+tries; other 4xx are not retried.
 
 ### 7.2 Calls
 
@@ -371,21 +390,42 @@ These are the external API calls the app makes. PhageViz exposes no endpoints of
 
 | Purpose | E-utility | Parameters | Returns |
 |---|---|---|---|
-| Search | `esearch` | `db="nuccore"`, `term=<user term> AND "complete genome"[Title]`, `retmax=20`, `idtype="acc"` | List of accessions |
+| Search | `esearch` | `db="nuccore"`, `term=(<term>) AND "complete genome"[Title] AND 1000:1000000[SLEN]` (first with ` AND refseq[filter]`), `retmax=20`, `idtype="acc"` | List of accession versions |
 | Summary | `esummary` | `db="nuccore"`, `id=<accession list>` | Title, length (`Length`), `AccessionVersion` |
 | Fetch | `efetch` | `db="nuccore"`, `id=<accession>`, `rettype="gbwithparts"`, `retmode="text"` | GenBank text |
 
 `gbwithparts` is used instead of `gb` so the sequence is always included, even for records assembled from parts.
 
+**Search query.** Parentheses are removed from the user's term and the term is wrapped in
+parentheses, so input like `x) OR (y` can't cancel the filters. The `[SLEN]` range uses the §6.5
+limits, so results never include records the app would refuse.
+
+**Search ranking: RefSeq first.** NCBI returns the newest matches first. Searching "Escherichia
+phage T7" gave 124 matches whose newest 20 did not include the T7 reference genome `NC_001604`.
+`search` therefore runs the query with `refseq[filter]` first, then, if fewer than `retmax` came
+back, the unfiltered query, appending its IDs that aren't already present; the merged list is
+capped at `retmax` and summarised in one `esummary` call (results keep this order). One extra
+quick request per search. `NcbiSummary.is_refseq` (underscore after the 2-letter prefix) lets
+the UI label RefSeq hits.
+
+**NCBI's error replies.** Unknown IDs come back as HTTP 200 with an `<ERROR>` element, which
+`Entrez.read` raises as `RuntimeError`, e.g. `Invalid uid NC_999999999 at position= 0`. A protein
+accession queried in `nuccore` gives `Otherdb uid="…" db="protein"`; `summarize` uses that to add
+a protein-accession hint. A search with no hits returns an empty `IdList` (no exception).
+
 ### 7.3 Accession validation
 
 ```python
-ACCESSION_RE = re.compile(
-    r"^(?:[A-Z]{2}_\d{6,9}|[A-Z]{1,2}\d{5,6}|[A-Z]{4}\d{8,10})(?:\.\d+)?$"
+ACCESSION_RE = re.compile(  # used with fullmatch
+    r"(?:[A-Z]{2}_[A-Z]{0,6}\d{6,9}|[A-Z]{1,2}\d{5,6}|[A-Z]{2}\d{8}|[A-Z]{4}\d{8,10})(?:\.\d+)?"
 )
 ```
 
-Input is trimmed and upper-cased first. RefSeq (`NC_001416`), GenBank (`J02459`, `MN123456`) and WGS-style accessions pass. Anything else is treated as a search term.
+Input is trimmed and upper-cased first. RefSeq (`NC_001416`, `NZ_CP012345`), GenBank (`J02459`,
+`MN123456`, `PP12345678`) and WGS-style accessions pass. Anything else is treated as a search
+term. Compared with the original draft, the pattern adds RefSeq accessions with letters after the
+underscore (`NZ_CP…`) and GenBank's 2-letter + 8-digit form. Protein accessions (`YP_…`) pass the
+pattern by design and are reported by NCBI as not found (§7.2).
 
 ### 7.4 Fetch sequence
 
@@ -425,15 +465,24 @@ The summary check costs one small request and avoids downloading a whole bacteri
 
 | Exception | Trigger | Message shown |
 |---|---|---|
-| `NcbiNotConfigured` | No email in secrets | "NCBI access isn't set up. Add your email to `.streamlit/secrets.toml` (see README)." |
-| `InvalidAccession` | Fails regex in fetch mode | "`XYZ` doesn't look like an accession. Try `NC_001416`, or search by name." |
-| `AccessionNotFound` | esummary returns no record or an error field | "NCBI has no record for `XYZ`." |
-| `RecordTooLarge` | Length > limit | "`XYZ` is 4,641,652 bp. PhageViz handles genomes up to 1 Mb." |
-| `NcbiUnavailable` | HTTP 5xx, timeout, `URLError` after retries | "NCBI isn't responding. Try again in a minute, or upload a file instead." |
-| `NcbiRateLimited` | HTTP 429 after retries | "NCBI is limiting requests. Wait a moment, or add an API key." |
-| `NoResults` | esearch returns 0 IDs | "No complete genomes matched. Try a broader name." |
+| `NcbiNotConfigured` | No email in secrets, or a call before `configure` | "NCBI access isn't set up. Add your email to .streamlit/secrets.toml (see the README)." |
+| `InvalidAccession` | Fails the pattern in fetch mode | "'XYZ' doesn't look like an accession. Try NC_001416, or search by name." |
+| `AccessionNotFound` | esummary `<ERROR>` or empty; efetch reply without `LOCUS` | "NCBI has no nucleotide record for 'XYZ'." (+ protein hint, §7.2) |
+| `RecordTooLarge` / `RecordTooShort` | `check_length(summary)`, same rule and message as uploads | "NC_000913.3 is 4,641,652 bp. PhageViz handles genomes up to 1,000,000 bp." |
+| `NcbiUnavailable` | HTTP 5xx or other 4xx, timeout, connection error, `URLError`, unreadable XML, `<ERROR>` outside `summarize` | "NCBI isn't responding. Try again in a minute, or upload a file instead." |
+| `NcbiRateLimited` | HTTP 429 after retries | "NCBI is limiting requests. Wait a moment, or add an NCBI API key." |
+| `NoResults` | Blank term, or no IDs from either query | "No complete genomes matched 'XYZ'. Try a broader name." |
 
 All are subclasses of `PhageVizError` and are caught in `app.py` and shown with `st.error`. Unexpected exceptions are caught at the top level, logged without user data, and shown as a generic message.
+
+**Messages are plain text.** `src/` messages contain no Markdown (quotes instead of backticks),
+because they include user input and file data, and `st.error`/`st.warning` render Markdown;
+`app.py` escapes every message it displays with `md_escape`.
+
+**Testing.** Unit tests replay real replies captured by `scripts/capture_ncbi_fixtures.py` into
+`tests/data/ncbi/` (with `manifest.json` recording HTTP status) through the real `Entrez.read`;
+any Entrez call a test didn't set up fails the test. Live tests (`tests/test_ncbi_network.py`,
+`-m network`) read `NCBI_EMAIL` from the environment and skip without it.
 
 ### 7.7 Non-phage records
 

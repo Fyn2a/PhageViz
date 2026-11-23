@@ -279,7 +279,7 @@ def test_too_long_record_raises(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.parametrize("length", [1_000, 1_000_000])
 def test_length_limits_are_inclusive(length: int) -> None:
-    parsers._check_length("X", length)
+    parsers.check_length("X", length)
 
 
 def test_record_without_cds_is_rejected_until_gene_calling_exists() -> None:
